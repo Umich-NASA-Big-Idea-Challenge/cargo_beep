@@ -20,7 +20,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'test_motor_drive = cargo_beep.motor_drive:main'
+            'test_motor0_drive = cargo_beep.motor0_drive:main',
+            'test_motor1_drive = cargo_beep.motor1_drive:main',
+            'test_imu_publisher = cargo_beep.imu_pub:main',
+            'motor_control = cargo_beep.motor_controller:main'
         ],
     },
 )
