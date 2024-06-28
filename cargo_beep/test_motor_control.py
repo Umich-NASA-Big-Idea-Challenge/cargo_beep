@@ -6,6 +6,8 @@ from geometry_msgs.msg import Vector3
 
 from scipy.spatial.transform import Rotation
 
+imu_axes = {'x': 1, 'y': 0, 'z': 2}
+
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
 def euler_from_quat (quat):
     rot = Rotation.from_quat((quat.x, quat.y, quat.z, quat.w))
@@ -37,6 +39,12 @@ class MotorControllerNode(Node):
             10
         )
 
+        self.motor1_duty_pub = self.create_publisher(
+            Float32,
+            "dev1/duty",
+            10
+        )
+
 
         self.timer = self.create_timer(.01, self.timer_cb)
 
@@ -47,12 +55,18 @@ class MotorControllerNode(Node):
 
     
     def timer_cb(self):
+        rotation_axis = imu_axes['x']
         euler_rot = euler_from_quat(self.imu_data.orientation)
-        duty = lean_angle_to_duty_power(euler_rot[0])
+        duty = lean_angle_to_duty_power(euler_rot[rotation_axis])
 
-        duty_msg = Float32()
-        duty_msg.data = duty
-        self.motor0_duty_pub.publish(duty_msg)
+        duty_msg0 = Float32()
+        duty_msg0.data = -duty
+
+        duty_msg1 = Float32()
+        duty_msg1.data = duty
+
+        self.motor0_duty_pub.publish(duty_msg0)
+        self.motor1_duty_pub.publish(duty_msg1)
         
 
 
