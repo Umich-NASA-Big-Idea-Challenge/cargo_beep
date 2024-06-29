@@ -55,6 +55,28 @@ class PIDControllerNode(Node):
             10
         )
 
+        # TUNING HELPERS
+
+        self.tune_kp_sub = self.create_subscription(
+            Float32,
+            "tune/kp",
+            self.tune_kp_cb,
+            10
+        )
+
+        self.tune_ki_sub = self.create_subscription(
+            Float32,
+            "tune/ki",
+            self.tune_ki_cb,
+            10
+        )
+
+        self.tune_kd_sub = self.create_subscription(
+            Float32,
+            "tune/kd",
+            self.tune_kd_cb,
+            10
+        )
 
         self.timer = self.create_timer(self.dt, self.timer_cb)
 
@@ -86,6 +108,17 @@ class PIDControllerNode(Node):
 
         self.motor0_duty_pub.publish(duty_msg0)
         self.motor1_duty_pub.publish(duty_msg1)
+
+    # TUNING HELPER CALLBACKS
+
+    def tune_kp_cb (self, msg) :
+        self.kp = msg.data
+
+    def tune_ki_cb (self, msg) :
+        self.ki = msg.data
+
+    def tune_ki_cb (self, msg) :
+        self.ki = msg.data
         
 
 
