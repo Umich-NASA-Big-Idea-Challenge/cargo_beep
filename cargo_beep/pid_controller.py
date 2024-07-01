@@ -28,7 +28,7 @@ class PIDControllerNode(Node):
 
         self.error_prior = 0
         self.integral_prior = 0
-        self.kp = 1
+        self.kp = 0
         self.ki = 0
         self.kd = 0
         self.bias = 0
@@ -36,6 +36,7 @@ class PIDControllerNode(Node):
         self.desired_angle = 0
         self.dt = .01
         
+        # CRITICAL CONTROLS
         self.imu_data_sub = self.create_subscription(
             Imu,
             "imu0/data",
@@ -52,6 +53,14 @@ class PIDControllerNode(Node):
         self.motor1_duty_pub = self.create_publisher(
             Float32,
             "dev1/duty",
+            10
+        )
+
+        # OUTPUT FOR GRAPHING
+
+        self.lean_angle_pub = self.create_publisher(
+            Float32,
+            'output/lean_angle',
             10
         )
 
@@ -93,21 +102,24 @@ class PIDControllerNode(Node):
 
         error = self.desired_angle - euler_rot[rotation_axis]
 
-        integral = integral_prior + error * self.dt
-        derivative = (error - error_prior) / self.dt
-        output = self.kp*error + self.ki*integral + self.kd*derivative + bias
-        error_prior = error
-        integral_prior = integral
+        integral = self.integral_prior + error * self.dt
+        derivative = (error - self.error_prior) / self.dt
+        output = self.kp*error + self.ki*integral + self.kd*derivative + self.bias
+        self.error_prior = error
+        self.integral_prior = integral
 
         duty = output_to_duty_power(output)
         duty_msg0 = Float32()
         duty_msg0.data = -duty
+        self.motor0_duty_pub.publish(duty_msg0)
 
         duty_msg1 = Float32()
         duty_msg1.data = duty
-
-        self.motor0_duty_pub.publish(duty_msg0)
         self.motor1_duty_pub.publish(duty_msg1)
+        
+        lean_angle_msg = Float32()
+        lean_angle_msg.data = error
+        self.lean_angle_pub.publish(lean_angle_msg)
 
     # TUNING HELPER CALLBACKS
 
@@ -117,8 +129,8 @@ class PIDControllerNode(Node):
     def tune_ki_cb (self, msg) :
         self.ki = msg.data
 
-    def tune_ki_cb (self, msg) :
-        self.ki = msg.data
+    def tune_kd_cb (self, msg) :
+        self.kd = msg.data
         
 
 
