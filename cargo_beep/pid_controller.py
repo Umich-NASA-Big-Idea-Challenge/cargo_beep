@@ -15,8 +15,8 @@ def euler_from_quat (quat):
     return rot_euler
 
 def output_to_duty_power (angle):
-    MAX_DUTY = .2
-    MIN_DUTY = -.2
+    MAX_DUTY = .05
+    MIN_DUTY = -.05
     return min(MAX_DUTY, max(angle, MIN_DUTY))
 
 class PIDControllerNode(Node):
@@ -28,7 +28,7 @@ class PIDControllerNode(Node):
 
         self.error_prior = 0
         self.integral_prior = 0
-        self.kp = 0
+        self.kp = .001
         self.ki = 0
         self.kd = 0
         self.bias = 0
@@ -100,6 +100,8 @@ class PIDControllerNode(Node):
         rotation_axis = imu_axes['x']
         euler_rot = euler_from_quat(self.imu_data.orientation)
 
+        print(euler_rot)
+        
         error = self.desired_angle - euler_rot[rotation_axis]
 
         integral = self.integral_prior + error * self.dt
@@ -109,6 +111,7 @@ class PIDControllerNode(Node):
         self.integral_prior = integral
 
         duty = output_to_duty_power(output)
+
         duty_msg0 = Float32()
         duty_msg0.data = -duty
         self.motor0_duty_pub.publish(duty_msg0)
