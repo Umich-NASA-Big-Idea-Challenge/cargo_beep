@@ -30,6 +30,7 @@ setup(
             'imu_publisher = cargo_beep.imu_pub:main',
             'pid_control = cargo_beep.pid_controller:main',
             'test_motor_control = cargo_beep.test_motor_control:main',
+            "keyboard_control = cargo_beep.keyboard_controller:main"
         ],
     },
 )

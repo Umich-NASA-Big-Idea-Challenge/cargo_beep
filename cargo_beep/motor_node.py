@@ -1,7 +1,8 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32, Float32MultiArray, Bool
+from beep_interfaces.msg import MotorData
+import sys 
 
 from TMotorCANControl.servo_serial import *
 
@@ -12,6 +13,7 @@ CONTROL_MODES = {
     "DUTY":     3,
 }
 
+
 class MotorNode(Node):
     def __init__(self, device):
         super().__init__('motor_node')
@@ -20,12 +22,9 @@ class MotorNode(Node):
         self.mode = 10              #CONTROL_MODES["POSITION"]
         self.motor_data = 0
 
-        
         self.device.set_zero_position()
         
         self.device.update()
-        #self.device.enter_position_control()
-
 
         self.velocity_sub = self.create_subscription(
             Float32,
@@ -55,9 +54,16 @@ class MotorNode(Node):
             10
         )
 
+        self.shutdown_sub = self.create_subscription (
+            Bool,
+            "shutdown",
+            self.shutdown_cb,
+            10
+        )
+
         self.output_pub = self.create_publisher(
-            Float32MultiArray,
-            f"{self.dev_name}/output",
+            MotorData,
+            f"{self.dev_name}/motor_data",
             10
         )
         
@@ -77,14 +83,15 @@ class MotorNode(Node):
             self.device.current_qaxis = self.motor_data
             self.device.update()
 
-        output_angle = self.device.get_output_angle_radians()
-        output_velocity = self.device.get_output_velocity_radians_per_second()
-        output_acceleration = self.device.get_output_acceleration_radians_per_second_squared()
-        output_torque = self.device.get_output_torque_newton_meters()
-        
-        output_msg = Float32MultiArray()
-        output_msg.data = [output_angle, output_velocity, output_acceleration, output_torque]
-        self.output_pub.publish(output_msg)
+        data_msg = MotorData()
+        data_msg.angle = self.device.get_output_angle_radians()
+        data_msg.velocity = self.device.get_output_velocity_radians_per_second()
+        data_msg.acceleration = self.device.get_output_acceleration_radians_per_second_squared()
+        data_msg.torque = self.device.get_output_torque_newton_meters()
+        data_msg.q_current = float(self.device.get_current_qaxis_amps())
+        data_msg.ll_voltage = self.device.get_voltage_bus_volts()
+
+        self.output_pub.publish(data_msg)
 
     def velocity_cb(self, msg):
         
@@ -126,6 +133,10 @@ class MotorNode(Node):
             print("current")
             
         self.motor_data = msg.data
+    
+    def shutdown_cb(self, msg):
+        if (msg.data):
+            sys.exit(0)
 
 
 

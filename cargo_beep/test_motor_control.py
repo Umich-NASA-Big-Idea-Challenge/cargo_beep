@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 
@@ -33,6 +33,13 @@ class MotorControllerNode(Node):
             10
         )
 
+        self.motor0_output_sub = self.create_subscription(
+            Float32MultiArray,
+            "dev0/output",
+            self.motor0_output_cb,
+            10
+        )
+
         self.motor0_duty_pub = self.create_publisher(
             Float32,
             "dev0/duty",
@@ -52,6 +59,10 @@ class MotorControllerNode(Node):
 
     def imu_data_cb(self, msg):
         self.imu_data = msg
+
+    def motor0_output_cb(self, msg):
+        print(msg.data[1])
+        print(msg.data[4])
 
     
     def timer_cb(self):
