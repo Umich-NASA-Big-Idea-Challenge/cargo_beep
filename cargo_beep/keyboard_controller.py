@@ -23,7 +23,8 @@ class KeyboardControllerNode(Node):
     def __init__ (self):
         super().__init__("keyboard_control")
         
-        self.velocity = 0
+        self.left_velocity = 0
+        self.right_velocity = 0
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
         
@@ -50,18 +51,29 @@ class KeyboardControllerNode(Node):
     def timer_cb (self):
         key = getKey()
         if (key == 'w'):
-            self.velocity+=.05
+            self.left_velocity+=.05
+            self.right_velocity+=.05
+        if (key == 's'):
+            self.left_velocity-=.05
+            self.right_velocity-=.05
+        if (key == 'a'):
+            self.left_velocity+=.05
+            self.right_velocity-=.05
         if (key == 'd'):
-            self.velocity-=.05
+            self.left_velocity-=.05
+            self.right_velocity+=.05
         if (key == chr(27)):
             self.shutdown_cb()
+
+        print(f"left velocity: {self.left_velocity}")
+        print(f"right velocity: {self.right_velocity}\n\n")
         
         msg0 = Float32()
-        msg0.data = velocity_cap(self.velocity)
+        msg0.data = velocity_cap(self.right_velocity)
         self.velocity0_pub.publish(msg0)
 
         msg1 = Float32()
-        msg1.data = velocity_cap(-self.velocity)
+        msg1.data = velocity_cap(-self.left_velocity)
         self.velocity1_pub.publish(msg1)
         
 

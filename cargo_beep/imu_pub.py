@@ -21,15 +21,15 @@ class ImuNode(Node):
         self.i2c = busio.I2C(board.SCL, board.SDA)
 
         self.bno0 = BNO08X_I2C(self.i2c, address=0x4a)
-        #self.bno1 = BNO08X_I2C(self.i2c, address=0x4b)
+        self.bno1 = BNO08X_I2C(self.i2c, address=0x4b)
 
         self.bno0.enable_feature(BNO_REPORT_ACCELEROMETER)
         self.bno0.enable_feature(BNO_REPORT_GYROSCOPE)
         self.bno0.enable_feature(BNO_REPORT_ROTATION_VECTOR)
         
-        #self.bno1.enable_feature(BNO_REPORT_ACCELEROMETER)
-        #self.bno1.enable_feature(BNO_REPORT_GYROSCOPE)
-        #self.bno1.enable_feature(BNO_REPORT_ROTATION_VECTOR)
+        self.bno1.enable_feature(BNO_REPORT_ACCELEROMETER)
+        self.bno1.enable_feature(BNO_REPORT_GYROSCOPE)
+        self.bno1.enable_feature(BNO_REPORT_ROTATION_VECTOR)
 
         self.bno0_pub = self.create_publisher(
             Imu,
@@ -37,9 +37,15 @@ class ImuNode(Node):
             10
         )
 
+        self.bno1_pub = self.create_publisher(
+            Imu,
+            "imu1/data",
+            10
+        )
+
 
         print("Collecting IMU Information")
-        self.timer = self.create_timer(.01, self.timer_cb)
+        self.timer = self.create_timer(.002, self.timer_cb)
 
     def create_message(self, bno):
         imu_msg = Imu()
@@ -63,8 +69,8 @@ class ImuNode(Node):
         imu_msg_0 = self.create_message(self.bno0)
         self.bno0_pub.publish(imu_msg_0)
 
-        #imu_msg_1 = self.create_message(self.bno1)
-        #self.bno1_pub.publish(imu_msg_1)
+        imu_msg_1 = self.create_message(self.bno1)
+        self.bno1_pub.publish(imu_msg_1)
 
 
 
