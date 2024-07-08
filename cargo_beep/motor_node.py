@@ -89,7 +89,9 @@ class MotorNode(Node):
         data_msg.acceleration = self.device.get_output_acceleration_radians_per_second_squared()
         data_msg.torque = self.device.get_output_torque_newton_meters()
         data_msg.q_current = float(self.device.get_current_qaxis_amps())
-        data_msg.ll_voltage = float(self.device.get_voltage_bus_volts())
+        data_msg.q_voltage = float(self.device.get_voltage_qaxis_volts())
+        data_msg.bus_current = float(self.device.get_current_bus_amps())
+        data_msg.bus_voltage = float(self.device.get_voltage_bus_volts())
 
         self.output_pub.publish(data_msg)
 
