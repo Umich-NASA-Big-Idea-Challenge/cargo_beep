@@ -33,9 +33,9 @@ class PIDControllerNode(Node):
 
         self.error_prior = 0
         self.integral_prior = 0
-        self.kp = .008 # BEST .0055
-        self.ki = .0015 # BEST .001
-        self.kd = 0 #.000075 BEST .0001
+        self.kp = .009 # BEST .0055
+        self.ki = 0 # BEST .001
+        self.kd = .000005 #.000075 BEST .0001
         self.bias = 0
 
         self.desired_angle = DESIRED_ANGLE
@@ -123,10 +123,11 @@ class PIDControllerNode(Node):
             duty = float(0)
         else:
             duty = output_to_duty_power(output)
+        
 
-        print(f'duty: {duty}')
-        print(f'rotation: {euler_rot}')
-        print('\n\n\n\n\n\n\n\n\n\n\n\n\n')
+        #print(f'duty: {duty}')
+        #print(f'rotation: {euler_rot}')
+        #print('\n\n\n\n\n\n\n\n\n\n\n\n\n')
 
         duty_msg0 = Float32()
         duty_msg0.data = -duty
@@ -141,9 +142,9 @@ class PIDControllerNode(Node):
         self.lean_angle_pub.publish(lean_angle_msg)
 
         tune_msg = TuningValues()
-        tune_msg.kp = error
-        tune_msg.ki = integral
-        tune_msg.kd = derivative
+        tune_msg.kp = error * self.kp
+        tune_msg.ki = integral * self.ki
+        tune_msg.kd = derivative * self.kd
         self.tuning_pub.publish(tune_msg)
 
     def shutdown_cb (self, signum, frame):

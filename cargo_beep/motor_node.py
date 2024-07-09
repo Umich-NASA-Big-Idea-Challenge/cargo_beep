@@ -101,7 +101,7 @@ class MotorNode(Node):
             self.mode = CONTROL_MODES["VELOCITY"]
             self.device.enter_velocity_control()
             self.device.update()
-            print("vel")
+       
             
         self.motor_data = msg.data
 
@@ -111,9 +111,7 @@ class MotorNode(Node):
             self.mode = CONTROL_MODES["DUTY"]
             self.device.enter_duty_cycle_control()
             self.device.update()
-            print("duty")
-            print(msg.data)
-            
+    
         self.motor_data = msg.data
 
     def position_cb(self, msg):
@@ -122,7 +120,7 @@ class MotorNode(Node):
             self.mode = CONTROL_MODES["POSITION"]
             self.device.enter_position_control()
             self.device.update()
-            print("position")
+    
             
         self.motor_data = msg.data
 
@@ -132,7 +130,7 @@ class MotorNode(Node):
             self.mode = CONTROL_MODES["CURRENT"]
             self.device.enter_current_control()
             self.device.update()
-            print("current")
+     
             
         self.motor_data = msg.data
     
