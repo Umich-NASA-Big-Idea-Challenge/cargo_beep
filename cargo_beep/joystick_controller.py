@@ -26,6 +26,7 @@ class JoystickControllerNode(Node):
         
         self.left_velocity = 0
         self.right_velocity = 0
+        self.joystick = Joy()
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
         
@@ -47,7 +48,7 @@ class JoystickControllerNode(Node):
              10
         )
 
-        self.joystick = self.create_subscription(
+        self.joystick_sub = self.create_subscription(
             Joy,
             "joy",
             self.joystick_cb,
@@ -58,14 +59,14 @@ class JoystickControllerNode(Node):
 
     def joystick_cb(self, msg):
         self.joystick = msg
+        
     
     def timer_cb (self):
 
-    
-        print(f"Square: {self.joystick.buttons[0]}")
-        print(f"Cross {self.joystick.buttons[1]}")
-        print(f"Circle: {self.joystick.buttons[2]}")
-        print(f"Triangle: {self.joystick.buttons[3]}")
+        print(f"Square: {self.joystick.buttons}")
+        print(f"Cross {self.joystick.axes}")
+        # print(f"Circle: {self.joystick.buttons[2]}")
+        # print(f"Triangle: {self.joystick.buttons[3]}")
         # key = getKey()
         # if (key == 'w'):
         #     self.left_velocity+=.05
@@ -82,15 +83,15 @@ class JoystickControllerNode(Node):
         # if (key == chr(27)):
         #     self.shutdown_cb()
 
-        print(f"left velocity: {self.left_velocity}")
-        print(f"right velocity: {self.right_velocity}\n\n")
+        # print(f"left velocity: {self.left_velocity}")
+        # print(f"right velocity: {self.right_velocity}\n\n")
         
-        msg0 = Float32()
-        msg0.data = velocity_cap(self.right_velocity)
+        # msg0 = Float32()
+        # msg0.data = velocity_cap(self.right_velocity)
         #self.velocity0_pub.publish(msg0)
 
-        msg1 = Float32()
-        msg1.data = velocity_cap(-self.left_velocity)
+        # msg1 = Float32()
+        # msg1.data = velocity_cap(-self.left_velocity)
         #self.velocity1_pub.publish(msg1)
         
 

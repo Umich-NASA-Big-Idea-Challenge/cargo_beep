@@ -31,6 +31,7 @@ setup(
             'pid_control = cargo_beep.pid_controller:main',
             'test_motor_control = cargo_beep.test_motor_control:main',
             "keyboard_control = cargo_beep.keyboard_controller:main",
+            "joystick_control = cargo_beep.joystick_controller:main",
             "get_setpoint = cargo_beep.get_setpoint:main"
         ],
     },
