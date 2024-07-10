@@ -21,15 +21,15 @@ class ImuNode(Node):
         self.i2c = busio.I2C(board.SCL, board.SDA)
 
         self.bno0 = BNO08X_I2C(self.i2c, address=0x4a)
-        self.bno1 = BNO08X_I2C(self.i2c, address=0x4b)
+        #self.bno1 = BNO08X_I2C(self.i2c, address=0x4b)
 
-        self.bno0.enable_feature(BNO_REPORT_ACCELEROMETER)
-        self.bno0.enable_feature(BNO_REPORT_GYROSCOPE)
+        #self.bno0.enable_feature(BNO_REPORT_ACCELEROMETER)
+        #self.bno0.enable_feature(BNO_REPORT_GYROSCOPE)
         self.bno0.enable_feature(BNO_REPORT_ROTATION_VECTOR)
         
-        self.bno1.enable_feature(BNO_REPORT_ACCELEROMETER)
-        self.bno1.enable_feature(BNO_REPORT_GYROSCOPE)
-        self.bno1.enable_feature(BNO_REPORT_ROTATION_VECTOR)
+        #self.bno1.enable_feature(BNO_REPORT_ACCELEROMETER)
+        #self.bno1.enable_feature(BNO_REPORT_GYROSCOPE)
+        #self.bno1.enable_feature(BNO_REPORT_ROTATION_VECTOR)
 
         self.bno0_pub = self.create_publisher(
             Imu,
@@ -52,11 +52,11 @@ class ImuNode(Node):
 
         imu_msg.linear_acceleration.x, \
         imu_msg.linear_acceleration.y, \
-        imu_msg.linear_acceleration.z = bno.acceleration
+        imu_msg.linear_acceleration.z = (0.0, 0.0, 0.0)
 
         imu_msg.angular_velocity.x, \
         imu_msg.angular_velocity.y, \
-        imu_msg.angular_velocity.z = bno.gyro
+        imu_msg.angular_velocity.z = (0.0, 0.0, 0.0)
 
         imu_msg.orientation.x, \
         imu_msg.orientation.y, \
@@ -69,8 +69,8 @@ class ImuNode(Node):
         imu_msg_0 = self.create_message(self.bno0)
         self.bno0_pub.publish(imu_msg_0)
 
-        imu_msg_1 = self.create_message(self.bno1)
-        self.bno1_pub.publish(imu_msg_1)
+        #imu_msg_1 = self.create_message(self.bno1)
+        #self.bno1_pub.publish(imu_msg_1)
 
 
 

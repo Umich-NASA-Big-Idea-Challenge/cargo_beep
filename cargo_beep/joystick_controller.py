@@ -9,46 +9,41 @@ import signal
 settings = termios.tcgetattr(sys.stdin)
 
 MAX_VELOCITY = 3.0
-TRIGGER_SCALE = 1.5
 
-# def getKey():
-# 	tty.setraw(sys.stdin.fileno())
-# 	select.select([sys.stdin], [], [], 0)
-# 	key = sys.stdin.read(1)
-# 	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-# 	return key
+VELOCITY_SCALE = 1.5
+LEAN_SCALE = 3.0
 
-def velocity_cap (velocity = Float32):
-     if velocity > MAX_VELOCITY:
-         return MAX_VELOCITY
-     return velocity
+def normailize_trigger(val):
+    return (-val + 1) / 2
 
-    #  return min(MAX_VELOCITY, max(velocity, -MAX_VELOCITY))
+def joy_to_setpoint (joy):
+    # triggers are 1 at rest, -1 at full
+    forward  = normailize_trigger(joy.axes[4]) * VELOCITY_SCALE
+    backward = normailize_trigger(joy.axes[3]) * VELOCITY_SCALE
+    velocity = forward - backward
+
+    lean = joy.axes[1] * LEAN_SCALE
+
+    return velocity, lean
+
+def velocity_cap (velocity):
+    return min(MAX_VELOCITY, max(velocity, -MAX_VELOCITY))
 
 class JoystickControllerNode(Node):
     def __init__ (self):
         super().__init__("joystick_control")
         
+        # SETPOINTS
         self.left_velocity = 0.0
         self.right_velocity = 0.0
+        self.lean_angle
+
         self.joystick = Joy()
         self.left_trigger = 0.0
         self.right_trigger = 0.0
         
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
-        
-        self.velocity0_pub = self.create_publisher(
-             Float32,
-             "dev0/velocity",
-             10
-        )
-
-        self.velocity1_pub = self.create_publisher(
-             Float32,
-             "dev1/velocity",
-             10
-        )
     
         self.shutdown_pub = self.create_publisher(
              Bool,
@@ -62,14 +57,20 @@ class JoystickControllerNode(Node):
             self.joystick_cb,
             10
         )
+
+        self.setpoint_pub = self.create_publisher(
+            Setpoints,
+            "setpoints",
+            10
+        )
         
         self.timer = self.create_timer(.01, self.timer_cb)
 
     def joystick_cb(self, msg):
-        self.joystick = msg
-        self.left_trigger = (-1 * self.joystick.axes[3] + 1) * TRIGGER_SCALE
-        self.right_trigger = (-1 * self.joystick.axes[4] + 1) * TRIGGER_SCALE     
-        print(f"Left: {self.left_trigger}", f"Right {self.right_trigger}")
+        velocity, lean = joy_to_setpoint(msg)
+        self.right_velocity = velocity
+        self.left_velocity = -velocity
+        self.lean_angle = lean
     
     def timer_cb (self):
        
