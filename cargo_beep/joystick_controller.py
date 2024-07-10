@@ -9,7 +9,7 @@ import signal
 settings = termios.tcgetattr(sys.stdin)
 
 MAX_VELOCITY = 3.0
-TRIGGER_SCALE = .5
+TRIGGER_SCALE = 1.5
 
 # def getKey():
 # 	tty.setraw(sys.stdin.fileno())
