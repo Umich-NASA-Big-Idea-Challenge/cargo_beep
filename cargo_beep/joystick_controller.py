@@ -2,9 +2,40 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg._joy import Joy
+from beep_interfaces.msg import Setpoints
 
 import sys, select, termios, tty
 import signal
+
+#Button Mapping Indices
+SQUARE = 0
+X = 1
+CIRCLE = 2
+TRIANGLE = 3 
+LEFT_BUMPER = 4
+RIGHT_BUMPER = 5
+# LEFT_TRIGGER = 6  #Both triggers are read in as buttons, so I left it commented.
+# RIGHT_TRIGGER = 7
+SHARE = 8
+OPTIONS = 9
+LEFT_STICK = 10
+RIGHT_STICK = 11
+HOME = 12
+TOUCHPAD = 13
+
+#Axes Mapping Indices
+LEFT_STICK_YAW = 0
+LEFT_STICK_PITCH = 1
+
+RIGHT_STICK_PITCH = 5
+RIGHT_STICK_YAW = 2
+
+LEFT_TRIGGER = 3
+RIGHT_TRIGGER = 4
+
+#The D-pad is read in as an axis too
+D_PAD_PITCH = 7
+D_PAD_YAW = 6
 
 settings = termios.tcgetattr(sys.stdin)
 
@@ -13,16 +44,16 @@ MAX_VELOCITY = 3.0
 VELOCITY_SCALE = 1.5
 LEAN_SCALE = 3.0
 
-def normailize_trigger(val):
+def normalize_trigger(val):
     return (-val + 1) / 2
 
 def joy_to_setpoint (joy):
     # triggers are 1 at rest, -1 at full
-    forward  = normailize_trigger(joy.axes[4]) * VELOCITY_SCALE
-    backward = normailize_trigger(joy.axes[3]) * VELOCITY_SCALE
+    forward  = normalize_trigger(joy.axes[RIGHT_TRIGGER]) * VELOCITY_SCALE
+    backward = normalize_trigger(joy.axes[LEFT_TRIGGER]) * VELOCITY_SCALE
     velocity = forward - backward
 
-    lean = joy.axes[1] * LEAN_SCALE
+    lean = joy.axes[LEFT_STICK_PITCH] * LEAN_SCALE
 
     return velocity, lean
 
@@ -36,7 +67,7 @@ class JoystickControllerNode(Node):
         # SETPOINTS
         self.left_velocity = 0.0
         self.right_velocity = 0.0
-        self.lean_angle
+        self.lean_angle = 0.0
 
         self.joystick = Joy()
         self.left_trigger = 0.0
@@ -73,21 +104,12 @@ class JoystickControllerNode(Node):
         self.lean_angle = lean
     
     def timer_cb (self):
-       
-        self.left_velocity = self.left_trigger
-        self.right_velocity = self.right_trigger
-     
-        print(f"left velocity: {self.left_velocity}")
-        print(f"right velocity: {self.right_velocity}\n\n")
         
-        msg0 = Float32()
-        msg0.data = velocity_cap(self.right_velocity)
-        self.velocity0_pub.publish(msg0)
-
-        msg1 = Float32()
-        msg1.data = velocity_cap(-self.left_velocity)
-        self.velocity1_pub.publish(msg1)
-        
+        setpoints = Setpoints()
+        setpoints.left_velocity = self.left_velocity
+        setpoints.right_velocity = self.right_velocity
+        setpoints.lean_angle = self.lean_angle
+        self.setpoint_pub.publish(setpoints)
 
     
     def shutdown_cb(self):
