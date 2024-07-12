@@ -31,12 +31,13 @@ class PIDControllerNode(Node):
         self.imu_data0 = Imu()
         self.imu_data1 = Imu()
         self.setpoints = Setpoints()
+        self.setpoints.lean_angle = 0.0
 
         self.error_prior = 0
         self.integral_prior = 0
-        self.kp = .009 # BEST .0055
-        self.ki = 0 # BEST .001
-        self.kd = .000005 #.000075 BEST .0001
+        self.kp = .0115 # BEST .009
+        self.ki = .002 # BEST .001
+        self.kd = .00005 #BEST .000005 
         self.bias = 0
 
         self.desired_angle = INITIAL_ANGLE
@@ -125,20 +126,21 @@ class PIDControllerNode(Node):
         self.desired_angle = self.setpoints.lean_angle
         error = self.desired_angle - euler_rot[rotation_axis]
         
-        clearence = 0
+        clearence = .01
 
         
-    
-        integral = self.integral_prior + error * self.dt
+        if (-clearence < error and error < clearence):
+            integral = 0
+        else:
+            integral = self.integral_prior + error * self.dt
+
+        
         derivative = (error - self.error_prior) / self.dt
         output = self.kp*error + self.ki*integral + self.kd*derivative + self.bias
         self.error_prior = error
         self.integral_prior = integral
 
-        if (-clearence < error and error < clearence):
-            duty = float(0)
-        else:
-            duty = output_to_duty_power(output)
+        duty = output_to_duty_power(output)
         
 
         #print(f'duty: {duty}')
@@ -146,11 +148,11 @@ class PIDControllerNode(Node):
         #print('\n\n\n\n\n\n\n\n\n\n\n\n\n')
 
         duty_msg0 = Float32()
-        duty_msg0.data = -duty
+        duty_msg0.data = duty
         self.motor0_duty_pub.publish(duty_msg0)
 
         duty_msg1 = Float32()
-        duty_msg1.data = duty
+        duty_msg1.data = -duty
         self.motor1_duty_pub.publish(duty_msg1)
         
         lean_angle_msg = Float32()

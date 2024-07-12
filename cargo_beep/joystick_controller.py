@@ -42,7 +42,7 @@ settings = termios.tcgetattr(sys.stdin)
 MAX_VELOCITY = 3.0
 
 VELOCITY_SCALE = 1.5
-LEAN_SCALE = 3.0
+LEAN_SCALE = 15.0
 
 def normalize_trigger(val):
     return (-val + 1) / 2
@@ -112,7 +112,7 @@ class JoystickControllerNode(Node):
         self.setpoint_pub.publish(setpoints)
 
     
-    def shutdown_cb(self):
+    def shutdown_cb(self, signum, frame):
          shutdown_msg = Bool()
          shutdown_msg.data = True
          self.shutdown_pub.publish(shutdown_msg)

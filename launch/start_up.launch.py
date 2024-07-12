@@ -17,5 +17,10 @@ def generate_launch_description():
             package='cargo_beep',
             executable='motor1_drive',
             name='dev1'
+        ),
+        Node(
+            package='joy',
+            executable='joy_node',
+            name='joy'
         )
     ])
