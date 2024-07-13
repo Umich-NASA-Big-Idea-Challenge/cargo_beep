@@ -30,17 +30,29 @@ class PIDControllerNode(Node):
 
         self.imu_data0 = Imu()
         self.imu_data1 = Imu()
+        self.motor0_velocity = Float32()
+        self.motor1_velocity = Float32()
         self.setpoints = Setpoints()
+        self.driving = TuningValues()
         self.setpoints.lean_angle = 0.0
 
-        self.error_prior = 0
-        self.integral_prior = 0
-        self.kp = .0115 # BEST .009
-        self.ki = .002 # BEST .001
-        self.kd = .00005 #BEST .000005 
-        self.bias = 0
+        self.balance_error_prior = 0
+        self.balance_integral_prior = 0
+        self.balance_bias = 0
 
+        self.balance = TuningValues()
+        self.balance.kp = .0115 # BEST .009
+        self.balance.ki = .002 # BEST .001
+        self.balance.kd = .00005 #BEST .000005 
+
+        self.velocity = TuningValues()
+        self.velocity.kp = 0.0
+        self.velocity.ki = 0.0
+        self.velocity.kd = 0.0
+        
         self.desired_angle = INITIAL_ANGLE
+        self.desired_left_velocity = 0.0
+        self.desired_right_velocity = 0.0
         self.dt = .002
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
@@ -64,6 +76,20 @@ class PIDControllerNode(Node):
             Setpoints,
             "setpoints",
             self.setpoint_cb,
+            10
+        )
+
+        self.motor0_velocity_sub = self.create_subscription(
+            Float32,
+            "dev0/velocity",
+            self.motor0_velocity_cb,
+            10
+        )
+
+        self.motor1_velocity_sub = self.create_subscription(
+            Float32,
+            "dev1/velocity",
+            self.motor1_velocity_cb,
             10
         )
 
@@ -112,6 +138,14 @@ class PIDControllerNode(Node):
     def imu1_data_cb(self, msg):
         self.imu_data1 = msg
 
+    def motor0_velocity_cb(self, msg):
+        self.motor0_velocity = msg.data
+        print(f'Motor0 Velocity: {self.motor0_velocity}')
+
+    def motor1_velocity_cb(self, msg):
+        self.motor1_velocity = msg.data
+        print(f'Motor1 Velocity: {self.motor1_velocity}')
+
     def setpoint_cb(self, msg):
         self.setpoints.left_velocity = msg.left_velocity
         self.setpoints.right_velocity = msg.right_velocity
@@ -124,21 +158,21 @@ class PIDControllerNode(Node):
         
         # print(f'Lean Angle: {self.setpoints.lean_angle}')
         self.desired_angle = self.setpoints.lean_angle
-        error = self.desired_angle - euler_rot[rotation_axis]
+        balance_error = self.desired_angle - euler_rot[rotation_axis]
         
         clearence = .01
 
         
-        if (-clearence < error and error < clearence):
+        if (-clearence < balance_error and balance_error < clearence):
             integral = 0
         else:
-            integral = self.integral_prior + error * self.dt
+            integral = self.balance_integral_prior + balance_error * self.dt
 
         
-        derivative = (error - self.error_prior) / self.dt
-        output = self.kp*error + self.ki*integral + self.kd*derivative + self.bias
-        self.error_prior = error
-        self.integral_prior = integral
+        balance_derivative = (balance_error - self.balance_error_prior) / self.dt
+        balance_output = self.balance.kp * balance_error + self.balance.ki * integral + self.balance.kd * balance_derivative + self.balance_bias
+        self.balance_error_prior = balance_error
+        self.balance_integral_prior = integral
 
         duty = output_to_duty_power(output)
         
@@ -160,9 +194,9 @@ class PIDControllerNode(Node):
         self.lean_angle_pub.publish(lean_angle_msg)
 
         tune_msg = TuningValues()
-        tune_msg.kp = error * self.kp
-        tune_msg.ki = integral * self.ki
-        tune_msg.kd = derivative * self.kd
+        tune_msg.kp = balance_error * self.balance.kp
+        tune_msg.ki = integral * self.balance.ki
+        tune_msg.kd = derivative * self.balance.kd
         self.tuning_pub.publish(tune_msg)
 
     def shutdown_cb (self, signum, frame):
