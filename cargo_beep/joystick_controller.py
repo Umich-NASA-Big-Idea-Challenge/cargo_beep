@@ -8,41 +8,40 @@ import sys, select, termios, tty
 import signal
 
 #Button Mapping Indices
-SQUARE = 0
-X = 1
-CIRCLE = 2
-TRIANGLE = 3 
+A_BUTTON = 1
+B_BUTTON = 2
+X_BUTTON = 0
+Y_BUTTON = 3 
 LEFT_BUMPER = 4
 RIGHT_BUMPER = 5
-# LEFT_TRIGGER = 6  #Both triggers are read in as buttons, so I left it commented.
-# RIGHT_TRIGGER = 7
-SHARE = 8
-OPTIONS = 9
+
+LEFT_OPTION = 8
+RIGHT_OPTION = 9
 LEFT_STICK = 10
 RIGHT_STICK = 11
-HOME = 12
-TOUCHPAD = 13
+SHARE = 13
+
 
 #Axes Mapping Indices
 LEFT_STICK_YAW = 0
 LEFT_STICK_PITCH = 1
 
-RIGHT_STICK_PITCH = 5
 RIGHT_STICK_YAW = 2
+RIGHT_STICK_PITCH = 5
 
 LEFT_TRIGGER = 3
 RIGHT_TRIGGER = 4
 
-#The D-pad is read in as an axis too
-D_PAD_PITCH = 7
 D_PAD_YAW = 6
+D_PAD_PITCH = 7
+
 
 settings = termios.tcgetattr(sys.stdin)
 
-MAX_VELOCITY = 3.0
+MAX_VELOCITY = 10.0
 
-VELOCITY_SCALE = 1.5
-LEAN_SCALE = 15.0
+VELOCITY_SCALE = 10.0
+LEAN_SCALE = 1.5
 
 def normalize_trigger(val):
     return (-val + 1) / 2
@@ -100,7 +99,7 @@ class JoystickControllerNode(Node):
     def joystick_cb(self, msg):
         velocity, lean = joy_to_setpoint(msg)
         self.right_velocity = velocity
-        self.left_velocity = -velocity
+        self.left_velocity = velocity
         self.lean_angle = lean
     
     def timer_cb (self):
