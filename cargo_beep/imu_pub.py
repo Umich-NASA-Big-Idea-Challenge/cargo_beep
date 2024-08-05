@@ -23,8 +23,8 @@ class ImuNode(Node):
         self.bno0 = BNO08X_I2C(self.i2c, address=0x4a)
         #self.bno1 = BNO08X_I2C(self.i2c, address=0x4b)
 
-        #self.bno0.enable_feature(BNO_REPORT_ACCELEROMETER)
-        #self.bno0.enable_feature(BNO_REPORT_GYROSCOPE)
+        self.bno0.enable_feature(BNO_REPORT_ACCELEROMETER)
+        self.bno0.enable_feature(BNO_REPORT_GYROSCOPE)
         self.bno0.enable_feature(BNO_REPORT_ROTATION_VECTOR)
         
         #self.bno1.enable_feature(BNO_REPORT_ACCELEROMETER)
@@ -52,12 +52,11 @@ class ImuNode(Node):
 
         imu_msg.linear_acceleration.x, \
         imu_msg.linear_acceleration.y, \
-        imu_msg.linear_acceleration.z = (0.0, 0.0, 0.0)
+        imu_msg.linear_acceleration.z = bno.acceleration
 
         imu_msg.angular_velocity.x, \
         imu_msg.angular_velocity.y, \
-        imu_msg.angular_velocity.z = (0.0, 0.0, 0.0)
-
+        imu_msg.angular_velocity.z = bno.gyroscope
         imu_msg.orientation.x, \
         imu_msg.orientation.y, \
         imu_msg.orientation.z = bno.quaternion[0:3]
