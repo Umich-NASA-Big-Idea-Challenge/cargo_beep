@@ -27,12 +27,13 @@ linear_velocity_profile = gaussian_filter1d(linear_velocity_profile, 50)
 angular_velocity_profile = linear_velocity_profile / WHEEL_RADIUS
 
 class TractionTesting(Node):
+
     def __init__ (self):
-        super.__init__("traction_testing")
+        super().__init__('traction_testing')
 
         self.motor_velocity = 0
         self.angular_velocity_profile = angular_velocity_profile
-        self.t = 0
+        self.idx = 0
 
         self.velocity0_pub = self.create_publisher(
             Float32,
@@ -59,11 +60,20 @@ class TractionTesting(Node):
     
     def timer_cb(self):
         
-        self.motor_velocity = self.angular_velocity_profile[self.t]
-        self.t+=dt
+        if (self.idx < angular_velocity_profile.shape[0]):
+            self.motor_velocity = self.angular_velocity_profile[self.idx]
+            self.idx+=1
+        else:
+            self.motor_velocity = 0.0
 
-        self.velocity0_pub.publish(-self.motor_velocity)
-        self.velocity1_pub.publish(self.motor_velocity)
+        dev0_msg = Float32()
+        dev0_msg.data = -self.motor_velocity
+
+        dev1_msg = Float32()
+        dev1_msg.data = self.motor_velocity
+
+        self.velocity0_pub.publish(dev0_msg)
+        self.velocity1_pub.publish(dev1_msg)
 
     def shutdown_cb (self, signum, frame):
         shutdown_msg = Bool()
