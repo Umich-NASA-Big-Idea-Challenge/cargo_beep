@@ -7,6 +7,7 @@ from sensor_msgs.msg import Imu
 import board
 import busio
 from adafruit_bno08x import (
+    BNO_REPORT_LINEAR_ACCELERATION,
     BNO_REPORT_ACCELEROMETER,
     BNO_REPORT_GYROSCOPE,
     BNO_REPORT_ROTATION_VECTOR
@@ -23,7 +24,7 @@ class ImuNode(Node):
         self.bno0 = BNO08X_I2C(self.i2c, address=0x4a)
         #self.bno1 = BNO08X_I2C(self.i2c, address=0x4b)
 
-        self.bno0.enable_feature(BNO_REPORT_ACCELEROMETER)
+        self.bno0.enable_feature(BNO_REPORT_LINEAR_ACCELERATION)
         self.bno0.enable_feature(BNO_REPORT_GYROSCOPE)
         self.bno0.enable_feature(BNO_REPORT_ROTATION_VECTOR)
         
@@ -52,11 +53,12 @@ class ImuNode(Node):
 
         imu_msg.linear_acceleration.x, \
         imu_msg.linear_acceleration.y, \
-        imu_msg.linear_acceleration.z = bno.acceleration
+        imu_msg.linear_acceleration.z = bno.linear_acceleration
 
         imu_msg.angular_velocity.x, \
         imu_msg.angular_velocity.y, \
-        imu_msg.angular_velocity.z = bno.gyroscope
+        imu_msg.angular_velocity.z = bno.gyro
+        
         imu_msg.orientation.x, \
         imu_msg.orientation.y, \
         imu_msg.orientation.z = bno.quaternion[0:3]
