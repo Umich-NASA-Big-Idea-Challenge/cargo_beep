@@ -45,9 +45,9 @@ def euler_from_quaternion(q1):
         x = 0
         return rad_to_deg(x, y, z)
 
-    y = math.atan2(2*q1.y*q1.w-2*q1.x*q1.z , sqx - sqy - sqz + sqw)
-    z = math.asin(2*test/unit)
-    x = math.atan2(2*q1.x*q1.w-2*q1.y*q1.z , -sqx + sqy - sqz + sqw)
+    y = math.atan2(2 * q1.y * q1.w - 2 * q1.x * q1.z , sqx - sqy - sqz + sqw)
+    z = math.asin(2 * test/unit)
+    x = math.atan2(2 * q1.x * q1.w-2 * q1.y * q1.z , -sqx + sqy - sqz + sqw)
 
     return rad_to_deg(x, y, z)
 

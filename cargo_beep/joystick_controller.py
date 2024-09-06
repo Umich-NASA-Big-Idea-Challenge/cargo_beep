@@ -92,7 +92,6 @@ class JoystickControllerNode(Node):
         self.setpoint_pub = self.create_publisher(
             Setpoints,
             "setpoints",
-            f"/setpoints",
             10
         )
         
