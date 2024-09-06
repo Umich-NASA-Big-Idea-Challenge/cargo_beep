@@ -47,6 +47,7 @@ def normalize_trigger(val):
     return (-val + 1) / 2
 
 def joy_to_setpoint (joy):
+    """Normalize the triggers"""
     # triggers are 1 at rest, -1 at full
     forward  = normalize_trigger(joy.axes[RIGHT_TRIGGER]) * VELOCITY_SCALE
     backward = normalize_trigger(joy.axes[LEFT_TRIGGER]) * VELOCITY_SCALE
@@ -91,6 +92,7 @@ class JoystickControllerNode(Node):
         self.setpoint_pub = self.create_publisher(
             Setpoints,
             "setpoints",
+            f"/setpoints",
             10
         )
         

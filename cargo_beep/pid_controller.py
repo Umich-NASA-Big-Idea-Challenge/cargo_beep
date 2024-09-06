@@ -4,13 +4,15 @@ from std_msgs.msg import Float32, Bool
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 from beep_interfaces.msg import TuningValues
+from beep_interfaces.msg import Setpoints
 
 from scipy.spatial.transform import Rotation
 import signal, sys
+import math
 
-imu_axes = {'x': 1, 'y': 0, 'z': 2}
+imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
-DESIRED_ANGLE = .143
+DESIRED_ANGLE = 4
 
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
 def euler_from_quat (quat):
@@ -51,12 +53,12 @@ class PIDControllerNode(Node):
             10
         )
 
-        self.imu1_data_sub = self.create_subscription(
-            Imu,
-            "imu1/data",
-            self.imu1_data_cb,
-            10
-        )
+        # self.imu1_data_sub = self.create_subscription(
+        #     Imu,
+        #     "imu1/data",
+        #     self.imu1_data_cb,
+        #     10
+        # )
 
         self.motor0_duty_pub = self.create_publisher(
             Float32,
@@ -73,6 +75,15 @@ class PIDControllerNode(Node):
         self.shutdown_pub = self.create_publisher(
             Bool,
             "shutdown",
+            10
+        )
+
+        # JOYSTICK INPUTS
+
+        self.setpoints_sub = self.create_subscription(
+            Setpoints,
+            "setpoints",
+            self.setpoints_cb,
             10
         )
 
@@ -99,16 +110,19 @@ class PIDControllerNode(Node):
 
     def imu0_data_cb(self, msg):
         self.imu_data0 = msg
+        print(msg)
 
     def imu1_data_cb(self, msg):
         self.imu_data1 = msg
 
+    def setpoints_cb(self, msg):
+        self.desired_angle = msg.lean_angle
 
     def timer_cb(self):
         # Get current rotation angle
-        rotation_axis = imu_axes['x']
+        rotation_axis = imu_axes['y']
         euler_rot = euler_from_quat(self.imu_data0.orientation)
-        
+        print(euler_rot)
         error = self.desired_angle - euler_rot[rotation_axis]
         
         clearence = 0
@@ -125,11 +139,11 @@ class PIDControllerNode(Node):
             duty = output_to_duty_power(output)
 
         duty_msg0 = Float32()
-        duty_msg0.data = -duty
+        duty_msg0.data = duty
         self.motor0_duty_pub.publish(duty_msg0)
 
         duty_msg1 = Float32()
-        duty_msg1.data = duty
+        duty_msg1.data = -duty
         self.motor1_duty_pub.publish(duty_msg1)
         
         lean_angle_msg = Float32()
