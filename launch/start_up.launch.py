@@ -22,5 +22,10 @@ def generate_launch_description():
             package='joy',
             executable='joy_node',
             name='joy'
+        ),
+        Node(
+            package='cargo_beep',
+            executable='joystick_control',
+            name='xbox'
         )
     ])

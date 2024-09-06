@@ -36,12 +36,12 @@ D_PAD_YAW = 6
 D_PAD_PITCH = 7
 
 
-settings = termios.tcgetattr(sys.stdin)
+#settings = termios.tcgetattr(sys.stdin)
 
 MAX_VELOCITY = 10.0
 
 VELOCITY_SCALE = 10.0
-LEAN_SCALE = 1.5
+LEAN_SCALE = 15
 
 def normalize_trigger(val):
     return (-val + 1) / 2
