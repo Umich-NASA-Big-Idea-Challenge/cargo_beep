@@ -157,9 +157,16 @@ class PIDControllerNode(Node):
         print(euler_rot)
         error = self.desired_angle - euler_rot[rotation_axis]
         
-        clearence = 0
+        clearence = 0.1 #untested value --> arbitrary number, needs to be tested 
     
         integral = self.integral_prior + error * self.dt
+        
+        #zero the integral if we are close to the 0 mark so we don't have runaway integral stuff
+        if (-clearence < error and error < clearence):
+            integral = 0
+
+
+        #back to our regularly scheduled programming
         derivative = (error - self.error_prior) / self.dt
         output = self.kp*error + self.ki*integral + self.kd*derivative + self.bias
         self.error_prior = error
