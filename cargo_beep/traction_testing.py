@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32, Bool
+from std_msgs.msg import Float64, Bool
 
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
@@ -28,13 +28,13 @@ class TractionTesting(Node):
         self.idx = 0
 
         self.duty0_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev0/duty",
             10
         )
 
         self.duty1_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev1/duty",
             10
         )
@@ -58,10 +58,10 @@ class TractionTesting(Node):
         else:
             self.motor_duty = 0.0
 
-        dev0_msg = Float32()
+        dev0_msg = Float64()
         dev0_msg.data = -self.motor_duty
 
-        dev1_msg = Float32()
+        dev1_msg = Float64()
         dev1_msg.data = self.motor_duty
 
         self.velocity0_pub.publish(dev0_msg)

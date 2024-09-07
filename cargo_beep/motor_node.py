@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32, Float32MultiArray, Bool
+from std_msgs.msg import Float64, Float64MultiArray, Bool
 from beep_interfaces.msg import MotorData
 import sys 
 
@@ -27,28 +27,28 @@ class MotorNode(Node):
         self.device.update()
 
         self.velocity_sub = self.create_subscription(
-            Float32,
+            Float64,
             f"{self.dev_name}/velocity",
             self.velocity_cb,
             10
         )
 
         self.duty_sub = self.create_subscription(
-            Float32,
+            Float64,
             f"{self.dev_name}/duty",
             self.duty_cb,
             10
         )
 
         self.position_sub = self.create_subscription(
-            Float32,
+            Float64,
             f"{self.dev_name}/position",
             self.position_cb,
             10
         )
 
         self.current_sub = self.create_subscription(
-            Float32,
+            Float64,
             f"{self.dev_name}/current",
             self.current_cb,
             10

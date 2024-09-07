@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32, Bool
+from std_msgs.msg import Float64, Bool
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 from beep_interfaces.msg import TuningValues
@@ -94,13 +94,13 @@ class PIDControllerNode(Node):
         # )
 
         self.motor0_duty_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev0/duty",
             10
         )
 
         self.motor1_duty_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev1/duty",
             10
         )
@@ -123,7 +123,7 @@ class PIDControllerNode(Node):
         # OUTPUT FOR GRAPHING
 
         self.lean_angle_pub = self.create_publisher(
-            Float32,
+            Float64,
             'output/lean_angle',
             10
         )
@@ -177,15 +177,15 @@ class PIDControllerNode(Node):
         else:
             duty = output_to_duty_power(output)
 
-        duty_msg0 = Float32()
+        duty_msg0 = Float64()
         duty_msg0.data = duty
         self.motor0_duty_pub.publish(duty_msg0)
 
-        duty_msg1 = Float32()
+        duty_msg1 = Float64()
         duty_msg1.data = -duty
         self.motor1_duty_pub.publish(duty_msg1)
         
-        lean_angle_msg = Float32()
+        lean_angle_msg = Float64()
         lean_angle_msg.data = euler_rot[rotation_axis]
         self.lean_angle_pub.publish(lean_angle_msg)
 

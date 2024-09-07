@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool, Float32
+from std_msgs.msg import Bool, Float64
 
 import sys, select, termios, tty
 import signal
@@ -29,13 +29,13 @@ class KeyboardControllerNode(Node):
         signal.signal(signal.SIGINT, self.shutdown_cb)
         
         self.velocity0_pub = self.create_publisher(
-             Float32,
+             Float64,
              "dev0/velocity",
              10
         )
 
         self.velocity1_pub = self.create_publisher(
-             Float32,
+             Float64,
              "dev1/velocity",
              10
         )
@@ -68,11 +68,11 @@ class KeyboardControllerNode(Node):
         print(f"left velocity: {self.left_velocity}")
         print(f"right velocity: {self.right_velocity}\n\n")
         
-        msg0 = Float32()
+        msg0 = Float64()
         msg0.data = velocity_cap(self.right_velocity)
         self.velocity0_pub.publish(msg0)
 
-        msg1 = Float32()
+        msg1 = Float64()
         msg1.data = velocity_cap(-self.left_velocity)
         self.velocity1_pub.publish(msg1)
         

@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool, Float32
+from std_msgs.msg import Bool, Float64
 from sensor_msgs.msg._joy import Joy
 from beep_interfaces.msg import Setpoints
 
