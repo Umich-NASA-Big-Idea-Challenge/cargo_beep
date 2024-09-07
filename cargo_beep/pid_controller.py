@@ -52,7 +52,7 @@ def euler_from_quaternion(q1):
     return rad_to_deg(x, y, z)
 
 
-MAX_DUTY = .15
+MAX_DUTY = .25
 def output_to_duty_power (output):
     duty = min(MAX_DUTY, max(output, -MAX_DUTY))
     return float(duty)
@@ -67,9 +67,10 @@ class PIDControllerNode(Node):
 
         self.error_prior = 0
         self.integral_prior = 0
-        self.kp = .008 # BEST .0055
-        self.ki = .0015 # BEST .001
-        self.kd = 0 #.000075 BEST .0001
+        #past, .008, .0015, 0
+        self.kp = .0035 # BEST .0055
+        self.ki = .001 # BEST .001
+        self.kd = .0001 #.000075 BEST .0001
         self.bias = 0
 
         self.desired_angle = DESIRED_ANGLE
@@ -142,7 +143,6 @@ class PIDControllerNode(Node):
 
     def imu0_data_cb(self, msg):
         self.imu_data0 = msg
-        print(msg)
 
     def imu1_data_cb(self, msg):
         self.imu_data1 = msg
@@ -154,7 +154,7 @@ class PIDControllerNode(Node):
         # Get current rotation angle
         rotation_axis = imu_axes['y']
         euler_rot = euler_from_quaternion(self.imu_data0.orientation)
-        print(euler_rot)
+        
         error = self.desired_angle - euler_rot[rotation_axis]
         
         clearence = 0.1 #untested value --> arbitrary number, needs to be tested 
@@ -163,7 +163,7 @@ class PIDControllerNode(Node):
         
         #zero the integral if we are close to the 0 mark so we don't have runaway integral stuff
         if (-clearence < error and error < clearence):
-            integral = 0
+            integral = float(0)
 
 
         #back to our regularly scheduled programming
