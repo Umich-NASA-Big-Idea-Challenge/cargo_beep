@@ -54,6 +54,9 @@ def joy_to_setpoint (joy):
     velocity = forward - backward
 
     lean = joy.axes[LEFT_STICK_PITCH] * LEAN_SCALE
+    
+    if joy.buttons[Y_BUTTON] != 0:
+        lean = float(10)
 
     return velocity, lean
 
