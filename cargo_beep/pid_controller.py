@@ -13,7 +13,7 @@ import math
 imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
 DESIRED_ANGLE = 4
-
+YAW_SCALE = .1
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
 def euler_from_quat(quat):
     rot = Rotation.from_quat((quat.x, quat.y, quat.z, quat.w))
@@ -57,6 +57,7 @@ def output_to_duty_power (output):
     duty = min(MAX_DUTY, max(output, -MAX_DUTY))
     return float(duty)
 
+
 class PIDControllerNode(Node):
 
     def __init__(self):
@@ -74,6 +75,7 @@ class PIDControllerNode(Node):
         self.bias = 0
 
         self.desired_angle = DESIRED_ANGLE
+        self.yaw = 0
         self.dt = .002
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
@@ -149,6 +151,7 @@ class PIDControllerNode(Node):
 
     def setpoints_cb(self, msg):
         self.desired_angle = msg.lean_angle
+        self.yaw = msg.yaw
 
     def timer_cb(self):
         # Get current rotation angle
@@ -178,11 +181,11 @@ class PIDControllerNode(Node):
             duty = output_to_duty_power(output)
 
         duty_msg0 = Float32()
-        duty_msg0.data = duty
+        duty_msg0.data = duty + (self.yaw*YAW_SCALE)
         self.motor0_duty_pub.publish(duty_msg0)
 
         duty_msg1 = Float32()
-        duty_msg1.data = -duty
+        duty_msg1.data = -duty + (self.yaw*YAW_SCALE)
         self.motor1_duty_pub.publish(duty_msg1)
         
         lean_angle_msg = Float32()
