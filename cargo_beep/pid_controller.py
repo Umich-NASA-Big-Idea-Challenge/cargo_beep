@@ -13,7 +13,7 @@ import math
 imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
 
-DESIRED_ANGLE = 4
+DESIRED_ANGLE = 0
 YAW_SCALE = .1
 
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
@@ -200,14 +200,14 @@ class PIDControllerNode(Node):
         sim_msg0 = Float64()
         duty_msg0 = Float64()
         duty_msg0.data = duty + (self.yaw*YAW_SCALE)
-        sim_msg0.data = (- duty * 40.84070445 * 3) + (self.yaw*YAW_SCALE)
+        sim_msg0.data = (- duty + (-self.yaw*YAW_SCALE))* (40.84070445 * 2)
         self.motor0_duty_pub.publish(duty_msg0)
         self.motor0_sim_pub.publish(sim_msg0)
         
         sim_msg1 = Float64()
         duty_msg1 = Float64()
         duty_msg1.data = -duty + (self.yaw*YAW_SCALE)
-        sim_msg1.data = (- duty * 40.84070445 * 3) + (self.yaw*YAW_SCALE)
+        sim_msg1.data = (- duty + (self.yaw*YAW_SCALE))* (40.84070445 * 2)
 
         self.motor1_duty_pub.publish(duty_msg1)
         self.motor1_sim_pub.publish(sim_msg1)

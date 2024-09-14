@@ -27,6 +27,7 @@ class KeyboardControllerNode(Node):
         self.left_velocity = 0
         self.right_velocity = 0
         self.lean_angle = 0.0
+        self.yaw = 0.0
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
         
@@ -61,30 +62,38 @@ class KeyboardControllerNode(Node):
         if (key == 'w'):
             self.left_velocity+=.05
             self.right_velocity+=.05
-            self.lean_angle = float(10.0)
+            self.lean_angle += float(3.0)
+            self.yaw = float(0.0)
         elif (key == 's'):
             self.left_velocity-=.05
             self.right_velocity-=.05
-            self.lean_angle = float(-10.0)
+            self.lean_angle += float(-3.0)
+            self.yaw = float(0.0)
         elif (key == 'a'):
             self.left_velocity+=.05
             self.right_velocity-=.05
+            self.lean_angle = float(0.0)
+            self.yaw = float(.1)
         elif (key == 'd'):
             self.left_velocity-=.05
             self.right_velocity+=.05
+            self.lean_angle = float(0.0)
+            self.yaw = float(-.1)
         elif (key == 'x'):
             self.lean_angle = 0.0
+            self.yaw = 0.0  
         if (key == chr(27)):
             self.shutdown_cb()
 
         setpoints = Setpoints()
-        setpoints.left_velocity = self.left_velocity
-        setpoints.right_velocity = self.right_velocity
+        # setpoints.left_velocity = self.left_velocity
+        # setpoints.right_velocity = self.right_velocity
         # msg = Float64()
         # msg.data = self.lean_angle
         setpoints.lean_angle = self.lean_angle
+        setpoints.yaw = self.yaw
         self.setpoint_pub.publish(setpoints)
-        print(f"angle: {self.lean_angle}\n\n")
+        # print(f"angle: {self.lean_angle}\n\n")
 
         # def timer_cb (self):
             #     key = getKey()
