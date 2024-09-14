@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32, Float32MultiArray
+from std_msgs.msg import Float64, Float64MultiArray
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 
@@ -34,20 +34,20 @@ class MotorControllerNode(Node):
         )
 
         self.motor0_output_sub = self.create_subscription(
-            Float32MultiArray,
+            Float64MultiArray,
             "dev0/output",
             self.motor0_output_cb,
             10
         )
 
         self.motor0_duty_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev0/duty",
             10
         )
 
         self.motor1_duty_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev1/duty",
             10
         )
@@ -70,10 +70,10 @@ class MotorControllerNode(Node):
         euler_rot = euler_from_quat(self.imu_data.orientation)
         duty = lean_angle_to_duty_power(euler_rot[rotation_axis])
 
-        duty_msg0 = Float32()
+        duty_msg0 = Float64()
         duty_msg0.data = -duty
 
-        duty_msg1 = Float32()
+        duty_msg1 = Float64()
         duty_msg1.data = duty
 
         self.motor0_duty_pub.publish(duty_msg0)

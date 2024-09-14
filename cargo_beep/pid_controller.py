@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32, Bool
+from std_msgs.msg import Float64, Bool
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 from beep_interfaces.msg import TuningValues
@@ -12,8 +12,10 @@ import math
 
 imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
+
 DESIRED_ANGLE = 4
 YAW_SCALE = .1
+
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
 def euler_from_quat(quat):
     rot = Rotation.from_quat((quat.x, quat.y, quat.z, quat.w))
@@ -34,12 +36,14 @@ def euler_from_quaternion(q1):
 
     #heading, attitude, bank = y,z,x
     if (test > 0.499*unit): # singularity at north pole
+        #print("singularity at north pole")
         y = 2 * math.atan2(q1.x,q1.w)
         z = math.pi/2
         x = 0
         return rad_to_deg(x, y, z)
 
     if (test < -0.499*unit): # singularity at south pole
+        #print("singularity at south pole")
         y = -2 * math.atan2(q1.x,q1.w)
         z = -math.pi/2
         x = 0
@@ -96,14 +100,26 @@ class PIDControllerNode(Node):
         # )
 
         self.motor0_duty_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev0/duty",
             10
         )
 
         self.motor1_duty_pub = self.create_publisher(
-            Float32,
+            Float64,
             "dev1/duty",
+            10
+        )
+
+        self.motor0_sim_pub = self.create_publisher(
+            Float64,
+            "dev0/sim",
+            10
+        )
+
+        self.motor1_sim_pub = self.create_publisher(
+            Float64,
+            "dev1/sim",
             10
         )
 
@@ -125,7 +141,7 @@ class PIDControllerNode(Node):
         # OUTPUT FOR GRAPHING
 
         self.lean_angle_pub = self.create_publisher(
-            Float32,
+            Float64,
             'output/lean_angle',
             10
         )
@@ -180,15 +196,23 @@ class PIDControllerNode(Node):
         else:
             duty = output_to_duty_power(output)
 
-        duty_msg0 = Float32()
-        duty_msg0.data = duty + (self.yaw*YAW_SCALE)
-        self.motor0_duty_pub.publish(duty_msg0)
 
-        duty_msg1 = Float32()
-        duty_msg1.data = -duty + (self.yaw*YAW_SCALE)
-        self.motor1_duty_pub.publish(duty_msg1)
+        sim_msg0 = Float64()
+        duty_msg0 = Float64()
+        duty_msg0.data = duty + (self.yaw*YAW_SCALE)
+        sim_msg0.data = (- duty * 40.84070445 * 3) + (self.yaw*YAW_SCALE)
+        self.motor0_duty_pub.publish(duty_msg0)
+        self.motor0_sim_pub.publish(sim_msg0)
         
-        lean_angle_msg = Float32()
+        sim_msg1 = Float64()
+        duty_msg1 = Float64()
+        duty_msg1.data = -duty + (self.yaw*YAW_SCALE)
+        sim_msg1.data = (- duty * 40.84070445 * 3) + (self.yaw*YAW_SCALE)
+
+        self.motor1_duty_pub.publish(duty_msg1)
+        self.motor1_sim_pub.publish(sim_msg1)
+        
+        lean_angle_msg = Float64()
         lean_angle_msg.data = euler_rot[rotation_axis]
         self.lean_angle_pub.publish(lean_angle_msg)
 
