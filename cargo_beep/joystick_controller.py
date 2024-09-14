@@ -42,6 +42,7 @@ MAX_VELOCITY = 10.0
 
 VELOCITY_SCALE = 10.0
 LEAN_SCALE = 15
+YAW_SCALE = 1
 
 def normalize_trigger(val):
     return (-val + 1) / 2
@@ -54,11 +55,12 @@ def joy_to_setpoint (joy):
     velocity = forward - backward
 
     lean = joy.axes[LEFT_STICK_PITCH] * LEAN_SCALE
+    yaw = joy.axes[RIGHT_STICK_YAW] * YAW_SCALE
     
     if joy.buttons[Y_BUTTON] != 0:
         lean = float(10)
 
-    return velocity, lean
+    return velocity, lean, yaw
 
 def velocity_cap (velocity):
     return min(MAX_VELOCITY, max(velocity, -MAX_VELOCITY))
@@ -71,6 +73,7 @@ class JoystickControllerNode(Node):
         self.left_velocity = 0.0
         self.right_velocity = 0.0
         self.lean_angle = 0.0
+        self.yaw = 0.0
 
         self.joystick = Joy()
         self.left_trigger = 0.0
@@ -101,10 +104,11 @@ class JoystickControllerNode(Node):
         self.timer = self.create_timer(.01, self.timer_cb)
 
     def joystick_cb(self, msg):
-        velocity, lean = joy_to_setpoint(msg)
+        velocity, lean, yaw = joy_to_setpoint(msg)
         self.right_velocity = velocity
         self.left_velocity = velocity
         self.lean_angle = lean
+        self.yaw = yaw
     
     def timer_cb (self):
         
@@ -112,6 +116,7 @@ class JoystickControllerNode(Node):
         setpoints.left_velocity = self.left_velocity
         setpoints.right_velocity = self.right_velocity
         setpoints.lean_angle = self.lean_angle
+        setpoints.yaw = self.yaw
         self.setpoint_pub.publish(setpoints)
 
     

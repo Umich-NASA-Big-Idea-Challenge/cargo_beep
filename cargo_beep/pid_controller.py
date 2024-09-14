@@ -12,7 +12,9 @@ import math
 
 imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
-DESIRED_ANGLE = 0
+
+DESIRED_ANGLE = 4
+YAW_SCALE = .1
 
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
 def euler_from_quat(quat):
@@ -59,6 +61,7 @@ def output_to_duty_power (output):
     duty = min(MAX_DUTY, max(output, -MAX_DUTY))
     return float(duty)
 
+
 class PIDControllerNode(Node):
 
     def __init__(self):
@@ -76,6 +79,7 @@ class PIDControllerNode(Node):
         self.bias = 0
 
         self.desired_angle = DESIRED_ANGLE
+        self.yaw = 0
         self.dt = .002
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
@@ -163,6 +167,7 @@ class PIDControllerNode(Node):
 
     def setpoints_cb(self, msg):
         self.desired_angle = msg.lean_angle
+        self.yaw = msg.yaw
 
     def timer_cb(self):
         # Get current rotation angle
@@ -191,17 +196,19 @@ class PIDControllerNode(Node):
         else:
             duty = output_to_duty_power(output)
 
+
         sim_msg0 = Float64()
         duty_msg0 = Float64()
-        duty_msg0.data = duty
-        sim_msg0.data = - duty * 40.84070445 * 3
+        duty_msg0.data = duty + (self.yaw*YAW_SCALE)
+        sim_msg0.data = (- duty * 40.84070445 * 3) + (self.yaw*YAW_SCALE)
         self.motor0_duty_pub.publish(duty_msg0)
         self.motor0_sim_pub.publish(sim_msg0)
         
         sim_msg1 = Float64()
         duty_msg1 = Float64()
-        duty_msg1.data = -duty
-        sim_msg1.data = - duty * 40.84070445 * 3
+        duty_msg1.data = -duty + (self.yaw*YAW_SCALE)
+        sim_msg1.data = (- duty * 40.84070445 * 3) + (self.yaw*YAW_SCALE)
+
         self.motor1_duty_pub.publish(duty_msg1)
         self.motor1_sim_pub.publish(sim_msg1)
         
