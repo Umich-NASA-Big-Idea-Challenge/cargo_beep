@@ -6,42 +6,36 @@ import numpy as np
 from scipy.ndimage import gaussian_filter1d
 import signal, sys
 
-WHEEL_RADIUS = .78 # m (very rough measurement of pool floaties)
+WHEEL_RADIUS = .36 # m (very rough measurement of pool floaties)
 
 # Velocity profile
-max_duty = .15
+max_velocity = 2.2 / WHEEL_RADIUS
 dt = .01
-acceleration_duration =  5#s
-steady_duration = 15.0 #s
+acceleration_duration = 5 #s
+steady_duration = 20 #s
 
-acceleration_profile = np.linspace(0, max_duty, int((1/dt) * acceleration_duration))
-steady_profile = max_duty * np.ones(int(steady_duration * (1/dt)))
+acceleration_profile = np.linspace(0, max_velocity, int((1/dt) * acceleration_duration))
+steady_profile = max_velocity * np.ones(int(steady_duration * (1/dt)))
 
-duty_profile = np.concatenate((acceleration_profile, steady_profile))
+velocity_profile = np.concatenate((acceleration_profile, steady_profile))
 class TractionTesting(Node):
 
     def __init__ (self):
         super().__init__('traction_testing')
 
-        self.motor_duty = 0
-        self.duty_profile = duty_profile
+        self.motor_velocity = 0
+        self.velocity_profile = velocity_profile
         self.idx = 0
 
-        self.duty0_pub = self.create_publisher(
+        self.velocity0_pub = self.create_publisher(
             Float32,
-            "dev0/duty",
+            "dev0/velocity",
             10
         )
 
-        self.duty1_pub = self.create_publisher(
+        self.velocity1_pub = self.create_publisher(
             Float32,
-            "dev1/duty",
-            10
-        )
-
-        self.lean_angle_pub = self.create_publisher(
-            Float32,
-            'output/lean_angle',
+            "dev1/velocity",
             10
         )
 
@@ -53,27 +47,23 @@ class TractionTesting(Node):
             "shutdown",
             10
         )
-
-        
     
     def timer_cb(self):
         
-        if (self.idx < duty_profile.shape[0]):
-            self.motor_duty = self.duty_profile[self.idx]
+        if (self.idx < velocity_profile.shape[0]):
+            self.motor_velocity = self.velocity_profile[self.idx]
             self.idx+=1
         else:
-            self.motor_duty = 0.0
-
-        print(self.motor_duty)
+            self.motor_velocity = 0.0
 
         dev0_msg = Float32()
-        dev0_msg.data = -self.motor_duty
+        dev0_msg.data = -self.motor_velocity
 
         dev1_msg = Float32()
-        dev1_msg.data = self.motor_duty
+        dev1_msg.data = self.motor_velocity
 
-        self.duty0_pub.publish(dev0_msg)
-        self.duty1_pub.publish(dev1_msg)
+        self.velocity0_pub.publish(dev0_msg)
+        self.velocity1_pub.publish(dev1_msg)
 
     def shutdown_cb (self, signum, frame):
         shutdown_msg = Bool()
