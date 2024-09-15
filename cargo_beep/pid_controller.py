@@ -13,7 +13,7 @@ import math
 imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
 
-DESIRED_ANGLE = 0
+DESIRED_ANGLE = 0.0
 YAW_SCALE = .1
 
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
