@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg._joy import Joy
-from beep_interfaces.msg import Setpoints
+from beep_interfaces.msg import Setpoints, MotorData
 
 import sys, select, termios, tty
 import signal
