@@ -9,10 +9,10 @@ import signal, sys
 WHEEL_RADIUS = .78 # m (very rough measurement of pool floaties)
 
 # Velocity profile
-max_duty = .2
+max_duty = .15
 dt = .01
-acceleration_duration = 10.0 #s
-steady_duration = 10.0 #s
+acceleration_duration =  5#s
+steady_duration = 15.0 #s
 
 acceleration_profile = np.linspace(0, max_duty, int((1/dt) * acceleration_duration))
 steady_profile = max_duty * np.ones(int(steady_duration * (1/dt)))
@@ -39,6 +39,12 @@ class TractionTesting(Node):
             10
         )
 
+        self.lean_angle_pub = self.create_publisher(
+            Float32,
+            'output/lean_angle',
+            10
+        )
+
         self.timer = self.create_timer(.01, self.timer_cb)
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
@@ -58,14 +64,17 @@ class TractionTesting(Node):
         else:
             self.motor_duty = 0.0
 
+        print(self.motor_duty)
+
         dev0_msg = Float64()
+        sim-dev
         dev0_msg.data = -self.motor_duty
 
         dev1_msg = Float64()
         dev1_msg.data = self.motor_duty
 
-        self.velocity0_pub.publish(dev0_msg)
-        self.velocity1_pub.publish(dev1_msg)
+        self.duty0_pub.publish(dev0_msg)
+        self.duty1_pub.publish(dev1_msg)
 
     def shutdown_cb (self, signum, frame):
         shutdown_msg = Bool()
