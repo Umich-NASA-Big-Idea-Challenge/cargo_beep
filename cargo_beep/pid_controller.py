@@ -12,8 +12,8 @@ import math
 
 imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
-DESIRED_ANGLE = 4
-YAW_SCALE = .1
+IMU_ANGLE_ERROR = 4
+YAW_SCALE = .05
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
 def euler_from_quat(quat):
     rot = Rotation.from_quat((quat.x, quat.y, quat.z, quat.w))
@@ -69,12 +69,12 @@ class PIDControllerNode(Node):
         self.error_prior = 0
         self.integral_prior = 0
         #past, .008, .0015, 0
-        self.kp = .0035 # BEST .0055
-        self.ki = .001 # BEST .001
-        self.kd = .0001 #.000075 BEST .0001
+        self.kp = .014 # .016 last
+        self.ki = 0 # BEST .001
+        self.kd = 0.000008 # .000075
         self.bias = 0
 
-        self.desired_angle = DESIRED_ANGLE
+        self.desired_angle = IMU_ANGLE_ERROR
         self.yaw = 0
         self.dt = .002
 
@@ -150,7 +150,7 @@ class PIDControllerNode(Node):
         self.imu_data1 = msg
 
     def setpoints_cb(self, msg):
-        self.desired_angle = msg.lean_angle
+        self.desired_angle = msg.lean_angle + IMU_ANGLE_ERROR
         self.yaw = msg.yaw
 
     def timer_cb(self):
@@ -165,8 +165,8 @@ class PIDControllerNode(Node):
         integral = self.integral_prior + error * self.dt
         
         #zero the integral if we are close to the 0 mark so we don't have runaway integral stuff
-        if (-clearence < error and error < clearence):
-            integral = float(0)
+        #if (-clearence < error and error < clearence):
+            #integral = float(0)
 
 
         #back to our regularly scheduled programming
@@ -193,9 +193,9 @@ class PIDControllerNode(Node):
         self.lean_angle_pub.publish(lean_angle_msg)
 
         tune_msg = TuningValues()
-        tune_msg.kp = error
-        tune_msg.ki = integral
-        tune_msg.kd = derivative
+        tune_msg.kp = error * self.kp
+        tune_msg.ki = integral * self.ki
+        tune_msg.kd = derivative * self.kd
         self.tuning_pub.publish(tune_msg)
 
     def shutdown_cb (self, signum, frame):
