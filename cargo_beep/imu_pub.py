@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
+import numpy as np
 
 # IMU imports
 import board
@@ -27,10 +28,8 @@ class ImuNode(Node):
         self.bno0.enable_feature(BNO_REPORT_LINEAR_ACCELERATION)
         self.bno0.enable_feature(BNO_REPORT_GYROSCOPE)
         self.bno0.enable_feature(BNO_REPORT_ROTATION_VECTOR)
-        
-        #self.bno1.enable_feature(BNO_REPORT_ACCELEROMETER)
-        #self.bno1.enable_feature(BNO_REPORT_GYROSCOPE)
-        #self.bno1.enable_feature(BNO_REPORT_ROTATION_VECTOR)
+
+        self.prior_orientations = []
 
         self.bno0_pub = self.create_publisher(
             Imu,
@@ -48,6 +47,14 @@ class ImuNode(Node):
         print("Collecting IMU Information")
         self.timer = self.create_timer(.002, self.timer_cb)
 
+    def smoothing(self, current_orientation):
+        self.prior_orientations.append(current_orientation)
+        if len(self.prior_orientations) > 3:
+            self.prior_orientations = self.prior_orientations[-3:]
+        avg_orientation = np.mean(self.prior_orientations, axis=0)
+        
+        return avg_orientation
+
     def create_message(self, bno):
         imu_msg = Imu()
 
@@ -59,10 +66,11 @@ class ImuNode(Node):
         imu_msg.angular_velocity.y, \
         imu_msg.angular_velocity.z = bno.gyro
         
+        smoothed_data = self.smoothing(bno.quaternion)
         imu_msg.orientation.x, \
         imu_msg.orientation.y, \
-        imu_msg.orientation.z = bno.quaternion[0:3]
-        imu_msg.orientation.w = float(bno.quaternion[3])
+        imu_msg.orientation.z = smoothed_data[0:3]
+        imu_msg.orientation.w = float(smoothed_data[3])
 
         return imu_msg
 

@@ -6,31 +6,31 @@ from beep_interfaces.msg import Setpoints, MotorData
 
 import sys, select, termios, tty
 import signal
+import numpy as np
 
 #Button Mapping Indices
-A_BUTTON = 1
-B_BUTTON = 2
-X_BUTTON = 0
+A_BUTTON = 0
+B_BUTTON = 1
+X_BUTTON = 2
 Y_BUTTON = 3 
 LEFT_BUMPER = 4
 RIGHT_BUMPER = 5
 
-LEFT_OPTION = 8
-RIGHT_OPTION = 9
-LEFT_STICK = 10
-RIGHT_STICK = 11
-SHARE = 13
+LEFT_OPTION = 6
+RIGHT_OPTION = 7
+LEFT_STICK = 9
+RIGHT_STICK = 10
 
 
 #Axes Mapping Indices
 LEFT_STICK_YAW = 0
 LEFT_STICK_PITCH = 1
 
-RIGHT_STICK_YAW = 2
-RIGHT_STICK_PITCH = 5
+RIGHT_STICK_YAW = 3
+RIGHT_STICK_PITCH = 4
 
-LEFT_TRIGGER = 3
-RIGHT_TRIGGER = 4
+LEFT_TRIGGER = 2
+RIGHT_TRIGGER = 5
 
 D_PAD_YAW = 6
 D_PAD_PITCH = 7
@@ -78,6 +78,8 @@ class JoystickControllerNode(Node):
         self.joystick = Joy()
         self.left_trigger = 0.0
         self.right_trigger = 0.0
+
+        self.prior_setpoints = []
         
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
@@ -105,14 +107,24 @@ class JoystickControllerNode(Node):
 
     def joystick_cb(self, msg):
         velocity, lean, yaw = joy_to_setpoint(msg)
-        self.right_velocity = velocity
-        self.left_velocity = velocity
-        self.lean_angle = lean
-        self.yaw = yaw
+        
+        # smoothing
+        self.prior_setpoints.append([velocity, lean, yaw])
+        if len(self.prior_setpoints) > 3:
+            self.prior_setpoints = self.prior_setpoints[-3:]
+        smoothed_setpoints = np.mean(self.prior_setpoints, axis=0)
+
+        # right = velocity, left = velocity, lean_angle = lean, yaw = yaw
+        self.right_velocity = smoothed_setpoints[0]
+        self.left_velocity = smoothed_setpoints[0]
+        self.lean_angle = smoothed_setpoints[1]
+        self.yaw = smoothed_setpoints[2]
     
     def timer_cb (self):
         
         setpoints = Setpoints()
+
+
         setpoints.left_velocity = self.left_velocity
         setpoints.right_velocity = self.right_velocity
         setpoints.lean_angle = self.lean_angle

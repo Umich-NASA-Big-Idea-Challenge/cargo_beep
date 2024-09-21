@@ -28,12 +28,13 @@ setup(
             'motor0_drive = cargo_beep.motor0_drive:main',
             'motor1_drive = cargo_beep.motor1_drive:main',
             'imu_publisher = cargo_beep.imu_pub:main',
-            'pid_control = cargo_beep.pid_controller:main',
-            'test_motor_control = cargo_beep.test_motor_control:main',
             "keyboard_control = cargo_beep.keyboard_controller:main",
             "joystick_control = cargo_beep.joystick_controller:main",
             "get_setpoint = cargo_beep.get_setpoint:main",
-            "traction_test = cargo_beep.traction_testing:main" 
+            "traction_test = cargo_beep.traction_testing:main",
+            'pid_lean = cargo_beep.pid_lean:main',
+            "pid_turning =  cargo_beep.pid_turning:main",
+            "pid_governor = cargo_beep.pid_governor:main"
         ],
     },
 )
