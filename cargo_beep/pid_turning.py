@@ -55,18 +55,21 @@ class TurnControllerNode(Node):
         )
 
         # OUTPUT FOR GRAPHING
-
         self.turn_angle_pub = self.create_publisher(
             Float32,
             'output/turn_angle',
             10
         )
 
-        # TUNING HELPERS
-
         self.turn_tuning_pub = self.create_publisher(
             TuningValues,
             "output/turn_tuning_values",
+            10
+        )
+
+        self.shutdown_pub = self.create_publisher(
+            Bool,
+            "shutdown",
             10
         )
 
@@ -79,18 +82,17 @@ class TurnControllerNode(Node):
         self.imu_data0 = msg
 
     def setpoints_cb(self, msg):
-        self.yaw -= msg.yaw
-        if (self.yaw < 0):
-            self.yaw = 359
-        if (self.yaw > 360):
-            self.yaw = 0
-        print(self.yaw)
+        self.desired_yaw -= msg.yaw
+        if (self.desired_yaw < 0):
+            self.desired_yaw = 359
+        if (self.desired_yaw > 360):
+            self.desired_yaw = 0
 
 
     def timer_cb(self):
 
         # calculate turning angle error
-        error = self.desired_yaw - get_turning_angle(self.imu_data0)
+        error = self.desired_yaw - get_turning_angle(self.imu_data0.orientation)
 
         clearance = 0.1 # untested value --> arbitrary number, needs to be tested 
 
@@ -106,16 +108,13 @@ class TurnControllerNode(Node):
         else:
             duty = output_to_duty_power(output)
 
-        duty_msg0 = Float32()
-        duty_msg0.data = duty
-        #self.turn_motor0_duty_pub.publish(duty_msg0)
-
-        duty_msg1 = Float32()
-        duty_msg1.data = -duty
-        #self.turn_motor1_duty_pub.publish(duty_msg1)
+        duty_msg = DutyPair()
+        duty_msg.dev0 = duty
+        duty_msg.dev1 = duty
+        self.turn_duty_pub.publish(duty_msg)
         
         turn_angle_msg = Float32()
-        turn_angle_msg.data = get_turning_angle(self.imu_data0)
+        turn_angle_msg.data = get_turning_angle(self.imu_data0.orientation)
         self.turn_angle_pub.publish(turn_angle_msg)
 
         tune_msg = TuningValues()
@@ -123,6 +122,12 @@ class TurnControllerNode(Node):
         tune_msg.ki = integral * self.ki
         tune_msg.kd = derivative * self.kd
         self.turn_tuning_pub.publish(tune_msg)
+    
+    def shutdown_cb (self, signum, frame):
+        shutdown_msg = Bool()
+        shutdown_msg.data = True
+        self.shutdown_pub.publish(shutdown_msg)
+        sys.exit(0)
 
 def main(args=None):
     rclpy.init(args=args)

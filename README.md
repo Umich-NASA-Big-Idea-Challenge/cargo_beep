@@ -7,6 +7,7 @@ To connect to the orin nano via SSH, use IP 35.3.143.183.
         So if you change and build the code without refreshing it will run the old version
 ```beep_start``` - Refreshes terminal and runs the cargo_beep startup file.
     The startup file initializes the IMU, Motor, and both Joystick nodes.
+```beep_pid``` - Refreshes terminal and starts up all pid processes
 ```beep_bag``` - Will begin recording a ROS Bag and all topics on robot.
 ```beep_build``` - Builds the ROS packages and refreshes your terminal
 

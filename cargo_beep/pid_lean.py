@@ -32,13 +32,6 @@ class LeanControllerNode(Node):
             10
         )
 
-        # self.imu1_data_sub = self.create_subscription(
-        #     Imu,
-        #     "imu1/data",
-        #     self.imu1_data_cb,
-        #     10
-        # )
-
         self.lean_duty_pub = self.create_publisher(
             DutyPair,
             "/pid/lean",
@@ -68,11 +61,9 @@ class LeanControllerNode(Node):
             10
         )
 
-        # TUNING HELPERS
-
         self.tuning_pub = self.create_publisher(
             TuningValues,
-            "output/tuning_values",
+            "output/lean_tuning_values",
             10
         )
 
@@ -89,7 +80,6 @@ class LeanControllerNode(Node):
 
     def setpoints_cb(self, msg):
         self.desired_angle = msg.lean_angle + IMU_ANGLE_ERROR
-        self.yaw = msg.yaw
 
     def timer_cb(self):
         # Get current rotation angle
@@ -97,16 +87,16 @@ class LeanControllerNode(Node):
 
         # convert from quaternion to euler
         euler_rot = euler_from_quaternion(self.imu_data0.orientation)
-        print(euler_rot)
+    
         # calculate lean angle error
         error = self.desired_angle - euler_rot[rotation_axis]
         
-        clearence = 0.1 #untested value --> arbitrary number, needs to be tested 
+        clearance = 0.1 #untested value --> arbitrary number, needs to be tested 
     
         integral = self.integral_prior + error * self.dt
         
         #zero the integral if we are close to the 0 mark so we don't have runaway integral stuff
-        #if (-clearence < error and error < clearence):
+        #if (-clearance < error and error < clearance):
             #integral = float(0)
 
 
@@ -116,13 +106,15 @@ class LeanControllerNode(Node):
         self.error_prior = error
         self.integral_prior = integral
 
-        if (-clearence < error and error < clearence):
+        if (-clearance < error and error < clearance):
             duty = float(0)
         else:
             duty = output_to_duty_power(output)
 
-        duty_msg0 = DutyPair()
-        duty_msg0.data = [duty, -duty]
+        duty_msg = DutyPair()
+        duty_msg.dev0 = duty
+        duty_msg.dev1 = -duty
+        self.lean_duty_pub.publish(duty_msg)
 
         lean_angle_msg = Float32()
         lean_angle_msg.data = euler_rot[rotation_axis]
