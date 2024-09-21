@@ -35,9 +35,6 @@ RIGHT_TRIGGER = 5
 D_PAD_YAW = 6
 D_PAD_PITCH = 7
 
-
-#settings = termios.tcgetattr(sys.stdin)
-
 MAX_VELOCITY = 10.0
 
 VELOCITY_SCALE = 10.0
@@ -80,9 +77,6 @@ class JoystickControllerNode(Node):
         self.right_trigger = 0.0
 
         self.prior_setpoints = []
-        
-
-        signal.signal(signal.SIGINT, self.shutdown_cb)
     
         self.shutdown_pub = self.create_publisher(
              Bool,
@@ -102,12 +96,19 @@ class JoystickControllerNode(Node):
             "setpoints",
             10
         )
-        
+
         self.timer = self.create_timer(.01, self.timer_cb)
 
     def joystick_cb(self, msg):
         velocity, lean, yaw = joy_to_setpoint(msg)
-        
+
+        #if x is presesd, shutdown the robot
+        shutdown = msg.buttons[X_BUTTON]
+        if (shutdown):
+            shutdown_msg = Bool()
+            shutdown_msg.data = True
+            self.shutdown_pub.publish(shutdown_msg)
+
         # smoothing
         self.prior_setpoints.append([velocity, lean, yaw])
         if len(self.prior_setpoints) > 3:
@@ -130,16 +131,6 @@ class JoystickControllerNode(Node):
         setpoints.lean_angle = self.lean_angle
         setpoints.yaw = self.yaw
         self.setpoint_pub.publish(setpoints)
-
-    
-    def shutdown_cb(self, signum, frame):
-         shutdown_msg = Bool()
-         shutdown_msg.data = True
-         self.shutdown_pub.publish(shutdown_msg)
-         sys.exit(0)
-        
-
-        
 
 
 def main(args=None):
