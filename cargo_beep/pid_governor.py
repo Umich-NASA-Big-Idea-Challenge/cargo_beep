@@ -1,6 +1,10 @@
 import rclpy
 import signal, sys
 
+from rclpy.node import Node
+from std_msgs.msg import Float32, Bool
+from beep_interfaces.msg import DutyPair
+
 from cargo_beep.pid_helper import *
 
 class PIDControllerNode(Node):
@@ -66,16 +70,16 @@ class PIDControllerNode(Node):
         self.lean_dev1 = msg.dev1
 
     def timer_cb(self):
-        duty0 = self.turn_gain * self.turn_dev0 + self.lean_gain * self.lean_dev0
-        duty1 = self.turn_gain * self.turn_dev1 + self.lean_gain * self.lean_dev1
+        duty0 = float(self.turn_gain * self.turn_dev0 + self.lean_gain * self.lean_dev0)
+        duty1 = float(self.turn_gain * self.turn_dev1 + self.lean_gain * self.lean_dev1)
         
         duty_msg0 = Float32()
         duty_msg0.data = duty0
-        self.motor0_duty_pub.publish(duty0)
+        self.motor0_duty_pub.publish(duty_msg0)
 
         duty_msg1 = Float32()
         duty_msg1.data = duty1
-        self.motor1_duty_pub.publish(duty1)
+        self.motor1_duty_pub.publish(duty_msg1)
      
 
     def shutdown_cb (self, signum, frame):

@@ -10,7 +10,7 @@ imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
 GLOBAL_DT = .002
 
-IMU_ANGLE_ERROR = 4
+IMU_ANGLE_ERROR = 9
 YAW_SCALE = .05
 
 MAX_DUTY = .25

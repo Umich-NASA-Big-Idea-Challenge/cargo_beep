@@ -5,7 +5,8 @@ import signal, sys
 
 # Calculate the desired turning angle based on the quaternian
 def get_turning_angle(q1):
-    angle = 2 * math.atan2(q1.z, q1.w)
+    angle = 2 * math.atan2(q1.z, q1.w) #radians
+    angle = (angle * 360) / (2 * math.pi)
     return angle
     
 class TurnControllerNode(Node):
@@ -87,6 +88,8 @@ class TurnControllerNode(Node):
             self.desired_yaw = 359
         if (self.desired_yaw > 360):
             self.desired_yaw = 0
+
+        print(self.desired_yaw)
 
 
     def timer_cb(self):

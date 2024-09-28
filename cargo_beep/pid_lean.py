@@ -13,9 +13,9 @@ class LeanControllerNode(Node):
         self.error_prior = 0
         self.integral_prior = 0
         #past, .008, .0015, 0
-        self.kp = .014 # .016 last
+        self.kp = .012 # .016 last
         self.ki = 0 # BEST .001
-        self.kd = 0.000008 # .000075
+        self.kd = 0.00001 # .0001
         self.bias = 0
 
         self.desired_angle = IMU_ANGLE_ERROR
