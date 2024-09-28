@@ -38,8 +38,9 @@ D_PAD_PITCH = 7
 MAX_VELOCITY = 10.0
 
 VELOCITY_SCALE = 10.0
-LEAN_SCALE = 15
+LEAN_SCALE = 20
 YAW_SCALE = 1
+YAW_INCREMENT_SCALE = .05
 
 def normalize_trigger(val):
     return (-val + 1) / 2
@@ -71,6 +72,7 @@ class JoystickControllerNode(Node):
         self.right_velocity = 0.0
         self.lean_angle = 0.0
         self.yaw = 0.0
+        self.desired_yaw = 0.0
 
         self.joystick = Joy()
         self.left_trigger = 0.0
@@ -102,6 +104,12 @@ class JoystickControllerNode(Node):
     def joystick_cb(self, msg):
         velocity, lean, yaw = joy_to_setpoint(msg)
 
+        self.desired_yaw -= YAW_INCREMENT_SCALE * yaw
+        if (self.desired_yaw < 0):
+            self.desired_yaw = 359
+        if (self.desired_yaw > 360):
+            self.desired_yaw = 0
+
         #if x is presesd, shutdown the robot
         shutdown = msg.buttons[X_BUTTON]
         if (shutdown):
@@ -129,7 +137,7 @@ class JoystickControllerNode(Node):
         setpoints.left_velocity = self.left_velocity
         setpoints.right_velocity = self.right_velocity
         setpoints.lean_angle = self.lean_angle
-        setpoints.yaw = self.yaw
+        setpoints.yaw = float(self.desired_yaw)
         self.setpoint_pub.publish(setpoints)
 
 

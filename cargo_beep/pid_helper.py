@@ -2,7 +2,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float32, Bool
 from sensor_msgs.msg import Imu
 from beep_interfaces.msg import TuningValues, Setpoints, DutyPair
-
+from scipy.spatial.transform import Rotation
 import numpy as np
 import math
 
@@ -10,7 +10,7 @@ imu_axes = {'x': 0, 'y': 1, 'z': 2}
 
 GLOBAL_DT = .002
 
-IMU_ANGLE_ERROR = 9
+IMU_ANGLE_ERROR = 16.5
 YAW_SCALE = .05
 
 MAX_DUTY = .25
@@ -23,6 +23,11 @@ def output_to_duty_power (output):
 # helper func for euler_from_quaternion
 def rad_to_deg(x, y, z):
     return [x * 180.0 / (2 * math.pi), y * 180.0 / (2 * math.pi), z * 180.0 / (2 * math.pi)]
+
+def euler_from_quat(quat):
+    rot = Rotation.from_quat((quat.x, quat.y, quat.z, quat.w))
+    rot_euler = rot.as_euler("xyz", degrees=True)
+    return rot_euler
 
 # takes in a Quaternian msg and returns a 3 tuple (x, y, z)
 def euler_from_quaternion(q1):
