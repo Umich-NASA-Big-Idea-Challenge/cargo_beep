@@ -10,17 +10,14 @@ def generate_launch_description():
         ),
         Node(
             package='cargo_beep',
+            executable='pid_turning',
+            name="turn",
+        ),
+        Node(
+            package='cargo_beep',
             executable='pid_governor',
             name='governor'
         )
     ])
 
 
-'''
-Add when turning is implemented
-Node(
-            package='cargo_beep',
-            executable='pid_turning',
-            name="turn",
-        ),
-'''

@@ -3,10 +3,19 @@ import signal
 import rclpy
 import signal, sys
 
+YAW_INCREMENT_SCALE = .25
+NULL_VALUE = -1012308709
+
 # Calculate the desired turning angle based on the quaternian
 def get_turning_angle(q1):
     angle = 2 * math.atan2(q1.z, q1.w) #radians
     angle = (angle * 360) / (2 * math.pi)
+    angle += 180
+    return angle
+
+def angle_wrap (angle):
+    if (angle < 0):
+        return angle+360
     return angle
     
 class TurnControllerNode(Node):
@@ -20,13 +29,15 @@ class TurnControllerNode(Node):
         self.integral_prior = 0
         
         #past, .008, .0015, 0
-        self.kp = .014 # .016 last
+        self.kp = .0025 # .016 last
         self.ki = 0 # BEST .001
-        self.kd = 0.000008 # .000075
+        self.kd = 0 # .000075
         self.bias = 0
 
         self.desired_yaw = 0
         self.dt = GLOBAL_DT
+
+        self.initial_offset = NULL_VALUE;
 
         self.prior_orientations = []
 
@@ -80,23 +91,23 @@ class TurnControllerNode(Node):
         print("Controlling Motors")
 
     def imu0_data_cb(self, msg):
+        if (self.initial_offset == NULL_VALUE):
+            self.initial_offset = get_turning_angle(msg.orientation)
         self.imu_data0 = msg
 
     def setpoints_cb(self, msg):
-        self.desired_yaw -= msg.yaw
-        if (self.desired_yaw < 0):
-            self.desired_yaw = 359
-        if (self.desired_yaw > 360):
-            self.desired_yaw = 0
-
-        print(self.desired_yaw)
+        self.desired_yaw = msg.yaw
 
 
     def timer_cb(self):
 
-        # calculate turning angle error
-        error = self.desired_yaw - get_turning_angle(self.imu_data0.orientation)
-
+        # calculate turning angle error with angle wrapping
+        error = self.desired_yaw - (get_turning_angle(self.imu_data0.orientation) - self.initial_offset)
+        if (error > 180):
+            error -= 360
+        if (error < -180):
+            error += 360
+        
         clearance = 0.1 # untested value --> arbitrary number, needs to be tested 
 
         integral = self.integral_prior + error * self.dt
@@ -117,7 +128,7 @@ class TurnControllerNode(Node):
         self.turn_duty_pub.publish(duty_msg)
         
         turn_angle_msg = Float32()
-        turn_angle_msg.data = get_turning_angle(self.imu_data0.orientation)
+        turn_angle_msg.data = angle_wrap(get_turning_angle(self.imu_data0.orientation) - self.initial_offset)
         self.turn_angle_pub.publish(turn_angle_msg)
 
         tune_msg = TuningValues()

@@ -13,9 +13,9 @@ class LeanControllerNode(Node):
         self.error_prior = 0
         self.integral_prior = 0
         #past, .008, .0015, 0
-        self.kp = .012 # .016 last
+        self.kp = .007 # .016 last
         self.ki = 0 # BEST .001
-        self.kd = 0.00001 # .0001
+        self.kd = 0.00005 # .0001
         self.bias = 0
 
         self.desired_angle = IMU_ANGLE_ERROR
@@ -86,7 +86,7 @@ class LeanControllerNode(Node):
         rotation_axis = imu_axes['y']
 
         # convert from quaternion to euler
-        euler_rot = euler_from_quaternion(self.imu_data0.orientation)
+        euler_rot = euler_from_quat(self.imu_data0.orientation)
     
         # calculate lean angle error
         error = self.desired_angle - euler_rot[rotation_axis]
