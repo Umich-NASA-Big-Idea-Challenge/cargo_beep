@@ -18,7 +18,7 @@ class PIDControllerNode(Node):
         self.lean_dev1 = 0
 
         self.lean_gain = 1
-        self.turn_gain = .4
+        self.turn_gain = .2
 
         self.dt = GLOBAL_DT
 

@@ -40,7 +40,7 @@ MAX_VELOCITY = 10.0
 VELOCITY_SCALE = 10.0
 LEAN_SCALE = 20
 YAW_SCALE = 1
-YAW_INCREMENT_SCALE = .05
+YAW_INCREMENT_SCALE = .35
 
 def normalize_trigger(val):
     return (-val + 1) / 2
@@ -72,7 +72,7 @@ class JoystickControllerNode(Node):
         self.right_velocity = 0.0
         self.lean_angle = 0.0
         self.yaw = 0.0
-        self.desired_yaw = 0.0
+        self.desired_yaw = 0
 
         self.joystick = Joy()
         self.left_trigger = 0.0
@@ -104,7 +104,7 @@ class JoystickControllerNode(Node):
     def joystick_cb(self, msg):
         velocity, lean, yaw = joy_to_setpoint(msg)
 
-        self.desired_yaw -= YAW_INCREMENT_SCALE * yaw
+        self.desired_yaw += YAW_INCREMENT_SCALE * yaw
         if (self.desired_yaw < 0):
             self.desired_yaw = 359
         if (self.desired_yaw > 360):

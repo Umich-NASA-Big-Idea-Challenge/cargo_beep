@@ -29,9 +29,9 @@ class TurnControllerNode(Node):
         self.integral_prior = 0
         
         #past, .008, .0015, 0
-        self.kp = .0025 # .016 last
-        self.ki = 0 # BEST .001
-        self.kd = 0 # .000075
+        self.kp = .30 # .016 last
+        self.ki =  0 #.0000015 #.00015 # BEST .001
+        self.kd = .002 #2 #.0006 # .000075
         self.bias = 0
 
         self.desired_yaw = 0
@@ -107,6 +107,8 @@ class TurnControllerNode(Node):
             error -= 360
         if (error < -180):
             error += 360
+        if (math.fabs(error) < 5):
+            error = 0
         
         clearance = 0.1 # untested value --> arbitrary number, needs to be tested 
 
@@ -123,8 +125,8 @@ class TurnControllerNode(Node):
             duty = output_to_duty_power(output)
 
         duty_msg = DutyPair()
-        duty_msg.dev0 = duty
-        duty_msg.dev1 = duty
+        duty_msg.dev0 = -duty
+        duty_msg.dev1 = -duty
         self.turn_duty_pub.publish(duty_msg)
         
         turn_angle_msg = Float32()
