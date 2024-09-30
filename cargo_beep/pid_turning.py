@@ -31,7 +31,7 @@ class TurnControllerNode(Node):
         #past, .008, .0015, 0
         self.kp = .30 # .016 last
         self.ki =  0 #.0000015 #.00015 # BEST .001
-        self.kd = .002 #2 #.0006 # .000075
+        self.kd = .001 #2 #.0006 # .000075
         self.bias = 0
 
         self.desired_yaw = 0
@@ -107,8 +107,9 @@ class TurnControllerNode(Node):
             error -= 360
         if (error < -180):
             error += 360
-        if (math.fabs(error) < 5):
+        if (math.fabs(error) < 3):
             error = 0
+            #error = math.sqrt(error) * (error/math.abs(error))
         
         clearance = 0.1 # untested value --> arbitrary number, needs to be tested 
 
