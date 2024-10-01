@@ -1,7 +1,7 @@
 from rclpy.node import Node
 from std_msgs.msg import Float32, Bool
 from sensor_msgs.msg import Imu
-from beep_interfaces.msg import TuningValues, Setpoints, DutyPair
+from beep_interfaces.msg import TuningValues, Setpoints, DutyPair, MotorData
 from scipy.spatial.transform import Rotation
 import numpy as np
 import math

@@ -15,6 +15,11 @@ def generate_launch_description():
         ),
         Node(
             package='cargo_beep',
+            executable='pid_velocity',
+            name='velocity'
+        ),
+        Node(
+            package='cargo_beep',
             executable='pid_governor',
             name='governor'
         )

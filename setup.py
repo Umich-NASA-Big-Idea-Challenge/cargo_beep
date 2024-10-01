@@ -34,6 +34,7 @@ setup(
             "traction_test = cargo_beep.traction_testing:main",
             'pid_lean = cargo_beep.pid_lean:main',
             "pid_turning =  cargo_beep.pid_turning:main",
+            "pid_velocity = cargo_beep.pid_velocity:main",
             "pid_governor = cargo_beep.pid_governor:main"
         ],
     },

@@ -2,6 +2,8 @@ import rclpy
 import signal, sys
 from cargo_beep.pid_helper import *
 
+MODE_LEAN = 1
+MODE_VELOCITY = 2
 
 class LeanControllerNode(Node):
 
@@ -21,6 +23,8 @@ class LeanControllerNode(Node):
         self.desired_angle = IMU_ANGLE_ERROR
         self.yaw = 0
         self.dt = GLOBAL_DT
+
+        self.mode = MODE_LEAN
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
         
@@ -53,6 +57,13 @@ class LeanControllerNode(Node):
             10
         )
 
+        self.goal_lean_sub = self.create_subscription(
+            Float32,
+            "/setpoints/goal_lean",
+            self.goallean_cb,
+            10
+        )
+
         # OUTPUT FOR GRAPHING
 
         self.lean_angle_pub = self.create_publisher(
@@ -79,7 +90,13 @@ class LeanControllerNode(Node):
         self.imu_data1 = msg
 
     def setpoints_cb(self, msg):
-        self.desired_angle = msg.lean_angle + IMU_ANGLE_ERROR
+        self.mode = msg.mode
+        if(self.mode == MODE_LEAN):
+            self.desired_angle = msg.lean_angle + IMU_ANGLE_ERROR
+    
+    def goallean_cb(self, msg):
+        if(self.mode == MODE_VELOCITY):
+            self.desired_angle = msg.data + IMU_ANGLE_ERROR
 
     def timer_cb(self):
         # Get current rotation angle
@@ -117,7 +134,7 @@ class LeanControllerNode(Node):
         self.lean_duty_pub.publish(duty_msg)
 
         lean_angle_msg = Float32()
-        lean_angle_msg.data = euler_rot[rotation_axis]
+        lean_angle_msg.data = euler_rot[rotation_axis] - IMU_ANGLE_ERROR
         self.lean_angle_pub.publish(lean_angle_msg)
 
         tune_msg = TuningValues()

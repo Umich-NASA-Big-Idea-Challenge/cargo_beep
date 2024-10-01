@@ -35,12 +35,18 @@ RIGHT_TRIGGER = 5
 D_PAD_YAW = 6
 D_PAD_PITCH = 7
 
-MAX_VELOCITY = 10.0
+MAX_VELOCITY = .50
 
-VELOCITY_SCALE = 10.0
+VELOCITY_SCALE = 5.0
 LEAN_SCALE = 20
 YAW_SCALE = 1
 YAW_INCREMENT_SCALE = .35
+
+# Mode constants
+NUM_MODES = 2
+
+LEAN_MODE = 1
+VELOCITY_MODE = 2
 
 def normalize_trigger(val):
     return (-val + 1) / 2
@@ -52,11 +58,10 @@ def joy_to_setpoint (joy):
     backward = normalize_trigger(joy.axes[LEFT_TRIGGER]) * VELOCITY_SCALE
     velocity = forward - backward
 
+
     lean = joy.axes[LEFT_STICK_PITCH] * LEAN_SCALE
     yaw = joy.axes[RIGHT_STICK_YAW] * YAW_SCALE
-    
-    if joy.buttons[Y_BUTTON] != 0:
-        lean = float(10)
+    velocity = velocity_cap(velocity)
 
     return velocity, lean, yaw
 
@@ -68,8 +73,7 @@ class JoystickControllerNode(Node):
         super().__init__("joystick_control")
         
         # SETPOINTS
-        self.left_velocity = 0.0
-        self.right_velocity = 0.0
+        self.velocity = 0.0
         self.lean_angle = 0.0
         self.yaw = 0.0
         self.desired_yaw = 0
@@ -77,6 +81,9 @@ class JoystickControllerNode(Node):
         self.joystick = Joy()
         self.left_trigger = 0.0
         self.right_trigger = 0.0
+        
+        self.mode_toggle = True
+        self.mode = LEAN_MODE
 
         self.prior_setpoints = []
     
@@ -101,6 +108,11 @@ class JoystickControllerNode(Node):
 
         self.timer = self.create_timer(.01, self.timer_cb)
 
+    def change_mode(self):
+        self.mode += 1;
+        if (self.mode > NUM_MODES):
+            self.mode = 1
+
     def joystick_cb(self, msg):
         velocity, lean, yaw = joy_to_setpoint(msg)
 
@@ -109,6 +121,15 @@ class JoystickControllerNode(Node):
             self.desired_yaw = 359
         if (self.desired_yaw > 360):
             self.desired_yaw = 0
+
+        mode_switch = msg.buttons[A_BUTTON]
+        if (mode_switch == 1 and self.mode_toggle):
+            print("press")
+            self.change_mode()
+            self.mode_toggle = False
+        if (mode_switch == 0 and not self.mode_toggle):
+            print("unpress")
+            self.mode_toggle = True
 
         #if x is presesd, shutdown the robot
         shutdown = msg.buttons[X_BUTTON]
@@ -124,20 +145,24 @@ class JoystickControllerNode(Node):
         smoothed_setpoints = np.mean(self.prior_setpoints, axis=0)
 
         # right = velocity, left = velocity, lean_angle = lean, yaw = yaw
-        self.right_velocity = smoothed_setpoints[0]
-        self.left_velocity = smoothed_setpoints[0]
+        self.velocity = smoothed_setpoints[0]
         self.lean_angle = smoothed_setpoints[1]
         self.yaw = smoothed_setpoints[2]
+
+        if(msg.buttons[LEFT_TRIGGER]):
+            self.lean_angle = 15.0
+        elif(msg.buttons[RIGHT_TRIGGER]):
+            self.lean_angle = -15.0
     
     def timer_cb (self):
         
         setpoints = Setpoints()
 
 
-        setpoints.left_velocity = self.left_velocity
-        setpoints.right_velocity = self.right_velocity
+        setpoints.velocity = self.velocity
         setpoints.lean_angle = self.lean_angle
         setpoints.yaw = float(self.desired_yaw)
+        setpoints.mode = self.mode
         self.setpoint_pub.publish(setpoints)
 
 
