@@ -147,12 +147,12 @@ class JoystickControllerNode(Node):
         # right = velocity, left = velocity, lean_angle = lean, yaw = yaw
         self.velocity = smoothed_setpoints[0]
         self.lean_angle = smoothed_setpoints[1]
-        self.yaw = smoothed_setpoints[2]
+        self.yaw = yaw
 
-        if(msg.buttons[LEFT_TRIGGER]):
-            self.lean_angle = 15.0
-        elif(msg.buttons[RIGHT_TRIGGER]):
-            self.lean_angle = -15.0
+        # if(msg.buttons[LEFT_TRIGGER]):
+        #     self.lean_angle = 15.0
+        # elif(msg.buttons[RIGHT_TRIGGER]):
+        #     self.lean_angle = -15.0
     
     def timer_cb (self):
         

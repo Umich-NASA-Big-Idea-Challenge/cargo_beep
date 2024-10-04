@@ -3,6 +3,9 @@ import signal, sys
 from cargo_beep.pid_helper import *
 from beep_interfaces.msg import MotorData
 
+MAX_LEAN = 12.0
+WHEEL_RADIUS = 0.4064
+
 class VelocityControllerNode(Node):
 
     def __init__(self):
@@ -11,7 +14,7 @@ class VelocityControllerNode(Node):
         self.error_prior = 0
         self.integral_prior = 0
         #past, .008, .0015, 0
-        self.kp = 12.5 # .016 last
+        self.kp = 6.5 # .016 last
         self.ki = 0 # BEST .001
         self.kd = 0.0 # .0001
         self.bias = 0
@@ -21,8 +24,9 @@ class VelocityControllerNode(Node):
         self.motor0_velocity = 0
         self.motor1_velocity = 0
         self.goal_velocity = 0
-        self.wheel_radius = 0.4064
-        self.current_lean_angle = 0
+        self.current_lean_angle = 0.0
+        self.goal_lean_angle = 0.0
+        self.last_lean_angle = 0.0
 
         signal.signal(signal.SIGINT, self.shutdown_cb)
         
@@ -94,13 +98,17 @@ class VelocityControllerNode(Node):
 
     def setpoints_cb(self, msg):
         self.goal_velocity = msg.velocity
+        if(msg.mode == 1):
+            self.goal_lean_angle = 0.0
 
     def current_lean_cb(self, msg):
         self.current_lean_angle = msg.data
 
     def timer_cb(self):
         current_velocity = (self.motor0_velocity + self.motor1_velocity)/2
-        current_velocity = -(current_velocity * self.wheel_radius)
+        lean_velocity = (self.current_lean_angle - self.last_lean_angle)/self.dt
+        current_velocity = -current_velocity - lean_velocity
+        current_velocity = (current_velocity * WHEEL_RADIUS)
         # calculate lean angle error
         error = self.goal_velocity - current_velocity
 
@@ -120,25 +128,24 @@ class VelocityControllerNode(Node):
         self.error_prior = error
         self.integral_prior = integral
 
-        lean_angle = output
+        # if(output < 0):
+        #     output = output - 4
+        # else:
+        #     output = output + 4
+        next_lean_angle = min(MAX_LEAN, max(output, -MAX_LEAN))
         if (-clearance < error and error < clearance):
-            lean_angle = float(0)
+            next_lean_angle = float(0)
 
-        angle_diff = self.current_lean_angle - lean_angle
-        lean_angle = lean_angle + 0.75*angle_diff
+        angle_diff = self.current_lean_angle - self.goal_lean_angle
+        #next_lean_angle = next_lean_angle + 0.75*angle_diff
 
-        # if(math.fabs(angle_diff) > 1):
-        #     #lean_angle = lean_angle + angle_diff
-        #     if(lean_angle < self.current_lean_angle):
-        #         lean_angle = self.current_lean_angle - 1
-        #     else:
-        #         lean_angle = self.current_lean_angle + 1
-
+        if(math.fabs(angle_diff) < 3.5):
+            self.goal_lean_angle = next_lean_angle
 
 
         
         goal_lean_angle_msg = Float32()
-        goal_lean_angle_msg.data = lean_angle
+        goal_lean_angle_msg.data = float(self.goal_lean_angle)
         self.goal_lean_pub.publish(goal_lean_angle_msg)
 
         velocity_msg = Float32()
@@ -150,6 +157,8 @@ class VelocityControllerNode(Node):
         tune_msg.ki = integral * self.ki
         tune_msg.kd = derivative * self.kd
         self.velocity_tuning_pub.publish(tune_msg)
+
+        self.last_lean_angle = self.current_lean_angle
 
     def shutdown_cb (self, signum, frame):
         shutdown_msg = Bool()
