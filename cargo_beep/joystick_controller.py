@@ -78,6 +78,9 @@ class JoystickControllerNode(Node):
         self.yaw = 0.0
         self.desired_yaw = 0
 
+        self.true_yaw = 0
+        self.yaw_control = False
+
         self.joystick = Joy()
         self.left_trigger = 0.0
         self.right_trigger = 0.0
@@ -100,6 +103,13 @@ class JoystickControllerNode(Node):
             10
         )
 
+        self.turning_angle_sub = self.create_subscription(
+            Float32,
+            "/output/turn_angle",
+            self.turning_angle_cb,
+            10
+        )
+
         self.setpoint_pub = self.create_publisher(
             Setpoints,
             "setpoints",
@@ -113,14 +123,21 @@ class JoystickControllerNode(Node):
         if (self.mode > NUM_MODES):
             self.mode = 1
 
+    def turning_angle_cb(self, msg):
+        self.true_yaw = msg.data
+
     def joystick_cb(self, msg):
         velocity, lean, yaw = joy_to_setpoint(msg)
 
         self.desired_yaw += YAW_INCREMENT_SCALE * yaw
+        self.yaw_control = yaw != 0
         if (self.desired_yaw < 0):
             self.desired_yaw = 359
         if (self.desired_yaw > 360):
             self.desired_yaw = 0
+        
+        if (self.yaw_control == False):
+            self.desired_yaw = self.true_yaw
 
         mode_switch = msg.buttons[A_BUTTON]
         if (mode_switch == 1 and self.mode_toggle):
