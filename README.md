@@ -1,6 +1,6 @@
 # cargo_beep
 ### Connectivity
-To connect to the orin nano via SSH, use IP 35.3.143.183.
+To connect to the orin nano via SSH, check the discord for the ip
 
 ### Custom Bash Aliases
 ```refresh``` - Resources ~/.bashrc this is important because ROS alters file paths on build.
