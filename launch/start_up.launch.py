@@ -18,14 +18,14 @@ def generate_launch_description():
             executable='motor1_drive',
             name='dev1'
         ),
-        Node(
-            package='joy',
-            executable='joy_node',
-            name='joy'
-        ),
-        Node(
-            package='cargo_beep',
-            executable='joystick_control',
-            name='xbox'
-        )
+        # Node(
+        #     package='joy',
+        #     executable='joy_node',
+        #     name='joy'
+        # ),
+        # Node(
+        #     package='cargo_beep',
+        #     executable='joystick_control',
+        #     name='xbox'
+        # )
     ])
