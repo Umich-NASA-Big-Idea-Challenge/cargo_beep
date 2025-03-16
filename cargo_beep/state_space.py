@@ -6,9 +6,6 @@ from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32, Bool
 from cargo_beep.pid_helper import *  # Keeping your helper functions
 
-MODE_LEAN = 1
-MODE_VELOCITY = 2
-
 class StateSpaceControllerNode(Node):
     def __init__(self):
         super().__init__('state_space_controller')
@@ -19,11 +16,11 @@ class StateSpaceControllerNode(Node):
         # Set time step
         self.dt = GLOBAL_DT
         
-        # Controller mode
-        self.mode = MODE_LEAN
-        
+        self.motor0_velocity = 0.0
+        self.motor1_velocity = 0.0
+        self.wheel_radius = .4
         # Desired angle and velocity
-        self.desired_angle = IMU_ANGLE_ERROR
+        self.desired_angle = 0.0
         self.desired_velocity = 0.0
         self.yaw = 0
         
@@ -35,9 +32,9 @@ class StateSpaceControllerNode(Node):
         self.tau_d = 0.01
         
         # Controller gains
-        self.K1 = -1.041  # Angle controller gain
+        self.K1 = .021658  # Angle controller gain
         self.K2 = 0.15    # Velocity controller gain 
-        self.K3 = 0.833   # Pre-compensator gain
+        self.K3 = 7.128922   # Pre-compensator gain
         
         # Initialize the state space controller matrices
         self.initialize_controller()
@@ -62,14 +59,21 @@ class StateSpaceControllerNode(Node):
             self.setpoints_cb,
             10
         )
-        
-        # Goal lean subscription
-        self.goal_lean_sub = self.create_subscription(
-            Float32,
-            "/setpoints/goal_lean",
-            self.goallean_cb,
+
+        self.dev0_data_sub = self.create_subscription(
+            MotorData,
+            "/dev0/motor_data",
+            self.dev0_data_cb,
             10
         )
+
+        self.dev1_data_sub = self.create_subscription(
+            MotorData,
+            "/dev1/motor_data",
+            self.dev1_data_cb,
+            10
+        )
+        
         
         # PUBLISHERS
         
@@ -93,6 +97,12 @@ class StateSpaceControllerNode(Node):
             'output/lean_angle',
             10
         )
+
+        self.velocity_pub = self.create_publisher(
+            Float32,
+            'output/velocity',
+            10
+        )
         
         self.tuning_pub = self.create_publisher(
             TuningValues,
@@ -112,21 +122,21 @@ class StateSpaceControllerNode(Node):
         self.Ac = np.array([
             [-100.0, 0.0, 0.0],
             [1.0, -2.722, 0.0],
-            [0.0, 0.0, -13.679]
+            [0.0, 0.0, -26.802867]
         ])
         
         # Controller B matrix
         self.Bc = np.array([
             [100.0, 0.0],
             [0.0, 0.0],
-            [0.0, 13.679]
+            [0.0, 26.802867]
         ])
         
         # Controller C matrix
-        self.Cc = np.array([[0.0, -0.15, -1.041]])
+        self.Cc = np.array([[-0.176162, -0.15, 4.721658]])
         
         # Controller D matrix
-        self.Dc = np.array([[0.15, -1.041]])
+        self.Dc = np.array([[0.15, 4.721658]])
     
     def imu0_data_cb(self, msg):
         """IMU data callback"""
@@ -135,48 +145,51 @@ class StateSpaceControllerNode(Node):
     def setpoints_cb(self, msg):
         """Handle setpoints messages"""
         self.mode = msg.mode
-        if(self.mode == MODE_LEAN):
-            self.desired_angle = msg.lean_angle + IMU_ANGLE_ERROR
-    
-    def goallean_cb(self, msg):
-        """Handle goal lean messages"""
-        if(self.mode == MODE_VELOCITY):
-            self.desired_angle = msg.data + IMU_ANGLE_ERROR
+        self.desired_velocity = msg.velocity
+
+    def dev0_data_cb(self, msg):
+        self.motor0_velocity = msg.velocity
+
+    def dev1_data_cb(self, msg):
+        self.motor1_velocity = -msg.velocity
     
     def timer_cb(self):
-        """Main control loop"""
+        """Main control loop following the full textbook approach"""
         # Get current rotation angle from IMU
         rotation_axis = imu_axes['y']
         
         # Convert quaternion to euler angles
         euler_rot = euler_from_quat(self.imu_data0.orientation)
         
-        # Current lean angle
-        current_angle = euler_rot[rotation_axis]
+        # Current lean angle (with offset correction)
+        current_angle = euler_rot[rotation_axis] - IMU_ANGLE_ERROR
         
-        # Calculate velocity (this is a simplification - improve with wheel encoders if available)
-        # In a real implementation, you should use wheel encoders or other sensors for velocity
-        # This is just a crude estimate based on angle changes
-        # You may already have a better velocity calculation in your system
-        current_velocity = 0.0  # Replace with actual velocity measurement if available
+        # Calculate velocity from wheel encoders if available
+        # This is a critical measurement for the controller to work well
+        current_velocity = (self.motor0_velocity + self.motor1_velocity)/2 * self.wheel_radius
         
-        # Define clearance zone (deadband)
-        clearance = 0.1
+        # In the textbook approach, the desired_angle is not explicitly calculated
+        # Instead, the velocity error directly feeds into the state-space controller
         
         # Form input to the controller
-        angle_error = self.desired_angle - current_angle
-        controller_input = np.array([self.desired_velocity - current_velocity, angle_error])
+        # First input: velocity error (desired - actual)
+        # Second input: current angle (for the inner loop)
+        controller_input = np.array([self.desired_velocity - current_velocity, current_angle * math.pi /180])
         
         # Update controller state (using Euler integration)
+        # This internally handles both the velocity and angle control loops
         state_derivative = self.Ac @ self.controller_state + self.Bc @ controller_input
         self.controller_state += state_derivative * self.dt
         
-        # Calculate controller output
+        # Calculate controller output (torque)
         output = self.Cc @ self.controller_state + self.Dc @ controller_input
         output = output[0]  # Extract the scalar value
         
-        # Apply deadband if very close to desired angle
-        if (-clearance < angle_error and angle_error < clearance):
+        # Define clearance zone (deadband)
+        clearance = 0
+        
+        # Check if we're close to balanced (near zero angle) and velocity is small
+        if (abs(current_angle) < clearance and abs(current_velocity) < 0.05):
             duty = float(0)
         else:
             # Convert controller output to duty cycle
@@ -190,13 +203,20 @@ class StateSpaceControllerNode(Node):
         
         # Publish lean angle for diagnostics
         lean_angle_msg = Float32()
-        lean_angle_msg.data = current_angle - IMU_ANGLE_ERROR
+        lean_angle_msg.data = current_angle
         self.lean_angle_pub.publish(lean_angle_msg)
+
+        current_vel_msg = Float32()
+        current_vel_msg.data = current_velocity
+        self.velocity_pub.publish(current_vel_msg)
+        
+        # For diagnostics - calculate the implied desired angle from state
+        # This approximates what the velocity controller is requesting
+        implied_desired_angle = self.controller_state[1] * (-self.K2/self.K1)
         
         # Publish tuning values for diagnostics
-        # Approximating the PID components for monitoring
         tune_msg = TuningValues()
-        tune_msg.kp = angle_error * self.K1
+        tune_msg.kp = current_angle * self.K1  # Proportional component
         tune_msg.ki = self.controller_state[2] * self.K3  # Integral-like component
         tune_msg.kd = self.controller_state[0] * self.K2  # Derivative-like component
         self.tuning_pub.publish(tune_msg)
