@@ -66,8 +66,8 @@ class PIDControllerNode(Node):
         self.turn_dev1 = msg.dev1
 
     def lean_cb(self, msg):
-        self.lean_dev0 = msg.dev0
-        self.lean_dev1 = msg.dev1
+        self.lean_dev0 = -msg.dev0
+        self.lean_dev1 = -msg.dev1
 
     def timer_cb(self):
         duty0 = float(self.turn_gain * self.turn_dev0 + self.lean_gain * self.lean_dev0)

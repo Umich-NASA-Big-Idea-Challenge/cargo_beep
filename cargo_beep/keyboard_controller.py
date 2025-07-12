@@ -78,10 +78,10 @@ class KeyboardControllerNode(Node):
         print("printing:", key)
 
         if (key == 'w'):
-            setpoints.lean_angle = -15.0
+            setpoints.lean_angle = 60.0
             self.lean_angle = setpoints.lean_angle
         if (key == 's'):
-            setpoints.lean_angle = 15.0
+            setpoints.lean_angle = -60.0
             self.lean_angle = setpoints.lean_angle
         if (key == 'a'):
             setpoints.yaw += .3
